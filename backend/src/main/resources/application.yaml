@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: Kami
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kami
+    username: kami
+    password: kami
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+

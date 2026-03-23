@@ -1,0 +1,16 @@
+.idea/
+*.iml
+out/
+.vscode/
+
+.gradle/
+**/build/
+bin/
+.classpath
+.project
+.settings/
+
+node_modules/
+.next/
+
+.DS_Store

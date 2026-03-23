@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: kami-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kami
+      POSTGRES_USER: kami
+      POSTGRES_PASSWORD: kami
+    ports:
+      - "5432:5432"
+    volumes:
+      - kami-postgres-data:/var/lib/postgresql
+
+volumes:
+  kami-postgres-data:

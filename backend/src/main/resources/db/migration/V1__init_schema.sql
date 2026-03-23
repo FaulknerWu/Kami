@@ -1,0 +1,43 @@
+CREATE TABLE category (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tag (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE article (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    summary VARCHAR(500) NOT NULL,
+    content TEXT NOT NULL,
+    cover_image VARCHAR(500),
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    category_id BIGINT,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_article_category
+        FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE SET NULL,
+    CONSTRAINT chk_article_status CHECK (status IN ('DRAFT', 'PUBLISHED'))
+);
+
+ CREATE TABLE article_tag (
+    article_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
+    PRIMARY KEY (article_id, tag_id),
+    CONSTRAINT fk_article_tag_article
+        FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE,
+    CONSTRAINT fk_article_tag_tag
+        FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
+);
+
