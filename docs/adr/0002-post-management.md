@@ -20,8 +20,8 @@ Proposed
 |------|------|------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | 主键 |
 | title | VARCHAR(255) | NOT NULL | 文章标题 |
-| slug | VARCHAR(255) | UNIQUE, NOT NULL | URL 友好的文章标识，用于前台路由 |
-| summary | VARCHAR(500) | | 文章摘要，列表页展示 |
+| slug | VARCHAR(50) | UNIQUE, NOT NULL | URL 友好的文章标识，用于前台路由 |
+| summary | VARCHAR(512) | NOT NULL | 文章摘要，列表页展示 |
 | content | TEXT | NOT NULL | Markdown 原始内容 |
 | cover_image | VARCHAR(512) | | 封面图 URL |
 | status | VARCHAR(20) | NOT NULL, DEFAULT 'DRAFT' | 文章状态：DRAFT / PUBLISHED |
@@ -54,7 +54,7 @@ Proposed
 
 - 前台列表按 `published_at DESC` 排序，仅返回 `PUBLISHED` 状态的文章
 - 后台列表按 `updated_at DESC` 排序，返回所有状态的文章
-- 分页参数：`page`（从 0 开始）、`size`（默认 10）
+- 分页参数：`page`（从 1 开始）、`size`（默认 10）
 
 ### 前端页面
 

@@ -1,4 +1,4 @@
-package fun.faulkner.kami.model;
+package fun.faulkner.kami.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -109,6 +109,4 @@ public class ArticleEntity {
     private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-
 }

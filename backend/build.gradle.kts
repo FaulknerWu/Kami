@@ -27,6 +27,8 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 
 	implementation("com.baomidou:mybatis-plus-spring-boot4-starter:3.5.15")
+	implementation("com.baomidou:mybatis-plus-jsqlparser:3.5.15")
+
 	runtimeOnly("org.postgresql:postgresql")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
