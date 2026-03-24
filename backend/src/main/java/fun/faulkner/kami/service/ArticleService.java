@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import fun.faulkner.kami.dto.request.CreateArticleRequest;
 import fun.faulkner.kami.dto.request.UpdateArticleRequest;
 import fun.faulkner.kami.entity.ArticleEntity;
+import fun.faulkner.kami.enums.ArticleStatus;
 import fun.faulkner.kami.repository.ArticleMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ArticleService {
@@ -48,13 +50,16 @@ public class ArticleService {
         }
 
         ArticleEntity article = new ArticleEntity();
+        LocalDateTime now = LocalDateTime.now();
         article.setTitle(request.title());
         article.setSlug(request.slug());
         article.setSummary(request.summary());
         article.setContent(request.content());
         article.setCoverImage(request.coverImage());
         article.setCategoryId(request.categoryId());
-        article.setStatus("DRAFT");
+        article.setCreatedAt(now);
+        article.setUpdatedAt(now);
+        article.setStatus(ArticleStatus.DRAFT.name());
 
         articleMapper.insert(article);
         return article;
@@ -86,5 +91,35 @@ public class ArticleService {
     public void deleteArticle(Long id){
         ArticleEntity article = getArticleById(id);
         articleMapper.deleteById(article.getId());
+    }
+
+    public ArticleEntity publishArticle(Long id){
+        ArticleEntity article = getArticleById(id);
+
+        if (Objects.equals(article.getStatus(), ArticleStatus.PUBLISHED.name())) {
+            return  article;
+        }
+
+        article.setStatus(ArticleStatus.PUBLISHED.name());
+        article.setPublishedAt(LocalDateTime.now());
+        article.setUpdatedAt(LocalDateTime.now());
+
+        articleMapper.updateById(article);
+        return  article;
+    }
+
+    public ArticleEntity unpublishArticle(Long id){
+        ArticleEntity article = getArticleById(id);
+
+        if (Objects.equals(article.getStatus(), ArticleStatus.DRAFT.name())) {
+            return  article;
+        }
+
+        article.setStatus(ArticleStatus.DRAFT.name());
+        article.setPublishedAt(null);
+        article.setUpdatedAt(LocalDateTime.now());
+
+        articleMapper.updateById(article);
+        return  article;
     }
 }

@@ -58,6 +58,18 @@ public class AdminArticleController {
         articleService.deleteArticle(id);
     }
 
+    @PutMapping("/{id}/publish")
+    public AdminArticleDetailResponse publishArticle(@PathVariable Long id)
+    {
+        return toAdminArticleDetailResponse(articleService.publishArticle(id));
+    }
+
+    @PutMapping("/{id}/unpublish")
+    public AdminArticleDetailResponse unpublishArticle(@PathVariable Long id)
+    {
+        return toAdminArticleDetailResponse(articleService.unpublishArticle(id));
+    }
+
     private ArticleSummaryResponse toArticleSummaryResponse(ArticleEntity article) {
         return new ArticleSummaryResponse(
                 article.getId(),
