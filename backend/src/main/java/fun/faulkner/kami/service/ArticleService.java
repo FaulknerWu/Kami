@@ -5,8 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import fun.faulkner.kami.dto.request.CreateArticleRequest;
 import fun.faulkner.kami.dto.request.UpdateArticleRequest;
 import fun.faulkner.kami.entity.ArticleEntity;
+import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.enums.ArticleStatus;
 import fun.faulkner.kami.repository.ArticleMapper;
+import fun.faulkner.kami.repository.ArticleTagMapper;
+import fun.faulkner.kami.repository.TagMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,9 +19,13 @@ import java.util.Objects;
 @Service
 public class ArticleService {
     private final ArticleMapper articleMapper;
+    private final ArticleTagMapper articleTagMapper;
+    private final TagMapper tagMapper;
 
-    public ArticleService(ArticleMapper articleMapper) {
+    public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, TagMapper tagMapper) {
         this.articleMapper = articleMapper;
+        this.articleTagMapper = articleTagMapper;
+        this.tagMapper = tagMapper;
     }
 
     public List<ArticleEntity> listArticles(long page, long size) {
@@ -62,6 +69,8 @@ public class ArticleService {
         article.setStatus(ArticleStatus.DRAFT.name());
 
         articleMapper.insert(article);
+        saveArticleTags(article.getId(), request.tagIds());
+
         return article;
     }
 
@@ -85,19 +94,20 @@ public class ArticleService {
         article.setUpdatedAt(LocalDateTime.now());
 
         articleMapper.updateById(article);
+        replaceArticleTags(article.getId(), request.tagIds());
         return article;
     }
 
-    public void deleteArticle(Long id){
+    public void deleteArticle(Long id) {
         ArticleEntity article = getArticleById(id);
         articleMapper.deleteById(article.getId());
     }
 
-    public ArticleEntity publishArticle(Long id){
+    public ArticleEntity publishArticle(Long id) {
         ArticleEntity article = getArticleById(id);
 
         if (Objects.equals(article.getStatus(), ArticleStatus.PUBLISHED.name())) {
-            return  article;
+            return article;
         }
 
         article.setStatus(ArticleStatus.PUBLISHED.name());
@@ -105,14 +115,14 @@ public class ArticleService {
         article.setUpdatedAt(LocalDateTime.now());
 
         articleMapper.updateById(article);
-        return  article;
+        return article;
     }
 
-    public ArticleEntity unpublishArticle(Long id){
+    public ArticleEntity unpublishArticle(Long id) {
         ArticleEntity article = getArticleById(id);
 
         if (Objects.equals(article.getStatus(), ArticleStatus.DRAFT.name())) {
-            return  article;
+            return article;
         }
 
         article.setStatus(ArticleStatus.DRAFT.name());
@@ -120,6 +130,30 @@ public class ArticleService {
         article.setUpdatedAt(LocalDateTime.now());
 
         articleMapper.updateById(article);
-        return  article;
+        return article;
+    }
+
+    public List<TagEntity> getArticleTags(Long articleId) {
+        List<Long> tagIds = articleTagMapper.selectTagIdsByArticleId(articleId);
+        if (tagIds.isEmpty()) {
+            return List.of();
+        }
+
+        return tagMapper.selectByIds(tagIds);
+    }
+
+    private void saveArticleTags(Long articleId, List<Long> tagIds) {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        articleTagMapper.insertBatch(articleId, tagIds);
+    }
+
+    private void replaceArticleTags(Long articleId, List<Long> tagIds) {
+        articleTagMapper.deleteByArticleId(articleId);
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        articleTagMapper.insertBatch(articleId, tagIds);
     }
 }

@@ -1,6 +1,7 @@
 package fun.faulkner.kami.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record AdminArticleDetailResponse(
         Long id,
@@ -10,9 +11,10 @@ public record AdminArticleDetailResponse(
         String content,
         String coverImage,
         String status,
-        Long categoryId,
+        CategoryResponse category,
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        List<TagResponse> tags
 ) {
 }
