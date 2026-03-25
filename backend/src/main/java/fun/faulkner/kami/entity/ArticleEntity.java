@@ -8,6 +8,20 @@ import java.time.LocalDateTime;
 
 @TableName("article")
 public class ArticleEntity {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private String title;
+    private String slug;
+    private String summary;
+    private String content;
+    private String coverImage;
+    private String status;
+    private Long categoryId;
+    private LocalDateTime publishedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     public String getTitle() {
         return title;
     }
@@ -95,18 +109,4 @@ public class ArticleEntity {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
-    private String title;
-    private String slug;
-    private String summary;
-    private String content;
-    private String coverImage;
-    private String status;
-    private Long categoryId;
-    private LocalDateTime publishedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
