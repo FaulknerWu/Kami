@@ -6,12 +6,10 @@ import fun.faulkner.kami.dto.response.CategoryResponse;
 import fun.faulkner.kami.entity.CategoryEntity;
 import fun.faulkner.kami.service.CategoryService;
 import jakarta.validation.Valid;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Validated
 @RequestMapping("/api/admin/categories")
 @RestController
 public class AdminCategoryController {

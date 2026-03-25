@@ -6,7 +6,6 @@ import fun.faulkner.kami.dto.response.TagResponse;
 import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.service.TagService;
 import jakarta.validation.Valid;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Validated
 @RequestMapping("/api/admin/tags")
 @RestController
 public class AdminTagController {
