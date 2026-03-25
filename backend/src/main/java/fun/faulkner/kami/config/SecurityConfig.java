@@ -14,7 +14,14 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/admin/posts", "/api/admin/posts/**").permitAll()
+                        .requestMatchers(
+                                "/api/admin/posts",
+                                "/api/admin/posts/**",
+                                "/api/admin/categories",
+                                "/api/admin/categories/**",
+                                "/api/admin/tags",
+                                "/api/admin/tags/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
