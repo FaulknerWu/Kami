@@ -25,9 +25,9 @@ public class TagService {
     }
 
     public List<TagEntity> listTags() {
-        LambdaQueryWrapper<TagEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByAsc(TagEntity::getName);
-        return tagMapper.selectList(queryWrapper);
+        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
+        tagQuery.orderByAsc(TagEntity::getName);
+        return tagMapper.selectList(tagQuery);
     }
 
     public List<TagEntity> listTagsByIds(List<Long> ids) {
@@ -46,7 +46,7 @@ public class TagService {
         return tag;
     }
 
-    public Map<Long, List<TagEntity>> getTagByArticleIds(List<Long> articleIds) {
+    public Map<Long, List<TagEntity>> listTagsGroupedByArticleIds(List<Long> articleIds) {
         if (articleIds == null || articleIds.isEmpty()) {
             return Map.of();
         }
@@ -68,7 +68,7 @@ public class TagService {
             tagMap.put(tag.getId(), tag);
         }
 
-        Map<Long, List<TagEntity>> tagByArticleIdsMap = new HashMap<>();
+        Map<Long, List<TagEntity>> tagsByArticleId = new HashMap<>();
         for (ArticleTagRelation relation : relations) {
             Long articleId = relation.articleId();
             Long tagId = relation.tagId();
@@ -78,30 +78,17 @@ public class TagService {
                 continue;
             }
 
-            tagByArticleIdsMap
+            tagsByArticleId
                     .computeIfAbsent(articleId, ignored -> new ArrayList<>())
                     .add(tag);
         }
 
-        return tagByArticleIdsMap;
+        return tagsByArticleId;
     }
 
     public TagEntity createTag(CreateTagRequest request) {
-        LambdaQueryWrapper<TagEntity> slugQueryWrapper = new LambdaQueryWrapper<>();
-        slugQueryWrapper.eq(TagEntity::getSlug, request.slug());
-
-        TagEntity existingTagBySlug = tagMapper.selectOne(slugQueryWrapper);
-        if (existingTagBySlug != null) {
-            throw new IllegalArgumentException("Tag slug already exists: " + request.slug());
-        }
-
-        LambdaQueryWrapper<TagEntity> nameQueryWrapper = new LambdaQueryWrapper<>();
-        nameQueryWrapper.eq(TagEntity::getName, request.name());
-
-        TagEntity existingTagByName = tagMapper.selectOne(nameQueryWrapper);
-        if (existingTagByName != null) {
-            throw new IllegalArgumentException("Tag name already exists: " + request.name());
-        }
+        ensureTagSlugAvailable(request.slug(), null);
+        ensureTagNameAvailable(request.name(), null);
 
         TagEntity tag = new TagEntity();
         tag.setName(request.name());
@@ -113,22 +100,8 @@ public class TagService {
 
     public TagEntity updateTag(Long id, UpdateTagRequest request) {
         TagEntity tag = getTagById(id);
-
-        LambdaQueryWrapper<TagEntity> slugQueryWrapper = new LambdaQueryWrapper<>();
-        slugQueryWrapper.eq(TagEntity::getSlug, request.slug());
-
-        TagEntity existingTagBySlug = tagMapper.selectOne(slugQueryWrapper);
-        if (existingTagBySlug != null && !existingTagBySlug.getId().equals(id)) {
-            throw new IllegalArgumentException("Tag slug already exists: " + request.slug());
-        }
-
-        LambdaQueryWrapper<TagEntity> nameQueryWrapper = new LambdaQueryWrapper<>();
-        nameQueryWrapper.eq(TagEntity::getName, request.name());
-
-        TagEntity existingTagByName = tagMapper.selectOne(nameQueryWrapper);
-        if (existingTagByName != null && !existingTagByName.getId().equals(id)) {
-            throw new IllegalArgumentException("Tag name already exists: " + request.name());
-        }
+        ensureTagSlugAvailable(request.slug(), id);
+        ensureTagNameAvailable(request.name(), id);
 
         tag.setName(request.name());
         tag.setSlug(request.slug());
@@ -140,5 +113,31 @@ public class TagService {
     public void deleteTag(Long id) {
         TagEntity tag = getTagById(id);
         tagMapper.deleteById(tag.getId());
+    }
+
+    private void ensureTagSlugAvailable(String slug, Long excludedTagId) {
+        TagEntity existingTag = findTagBySlug(slug);
+        if (existingTag != null && !existingTag.getId().equals(excludedTagId)) {
+            throw new IllegalArgumentException("Tag slug already exists: " + slug);
+        }
+    }
+
+    private void ensureTagNameAvailable(String name, Long excludedTagId) {
+        TagEntity existingTag = findTagByName(name);
+        if (existingTag != null && !existingTag.getId().equals(excludedTagId)) {
+            throw new IllegalArgumentException("Tag name already exists: " + name);
+        }
+    }
+
+    private TagEntity findTagBySlug(String slug) {
+        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
+        tagQuery.eq(TagEntity::getSlug, slug);
+        return tagMapper.selectOne(tagQuery);
+    }
+
+    private TagEntity findTagByName(String name) {
+        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
+        tagQuery.eq(TagEntity::getName, name);
+        return tagMapper.selectOne(tagQuery);
     }
 }

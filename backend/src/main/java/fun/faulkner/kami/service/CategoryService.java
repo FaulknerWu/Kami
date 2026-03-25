@@ -4,31 +4,32 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import fun.faulkner.kami.dto.request.CreateCategoryRequest;
 import fun.faulkner.kami.dto.request.UpdateCategoryRequest;
 import fun.faulkner.kami.entity.CategoryEntity;
+import fun.faulkner.kami.repository.CategoryMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class CategoryService {
-    private final fun.faulkner.kami.repository.CategoryMapper categoryMapper;
+    private final CategoryMapper categoryMapper;
 
-    public CategoryService(fun.faulkner.kami.repository.CategoryMapper categoryMapper) {
+    public CategoryService(CategoryMapper categoryMapper) {
         this.categoryMapper = categoryMapper;
     }
 
-    public CategoryEntity getCategoryById(Long id){
-        CategoryEntity category =  categoryMapper.selectById(id);
-        if (category == null){
+    public CategoryEntity getCategoryById(Long id) {
+        CategoryEntity category = categoryMapper.selectById(id);
+        if (category == null) {
             throw new IllegalArgumentException("Category not found, id=" + id);
         }
         return category;
     }
 
     public List<CategoryEntity> listCategories() {
-        LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByAsc(CategoryEntity::getSortOrder);
+        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
+        categoryQuery.orderByAsc(CategoryEntity::getSortOrder);
 
-        return categoryMapper.selectList(queryWrapper);
+        return categoryMapper.selectList(categoryQuery);
     }
 
     public List<CategoryEntity> listCategoriesByIds(List<Long> ids) {
@@ -40,21 +41,8 @@ public class CategoryService {
     }
 
     public CategoryEntity createCategory(CreateCategoryRequest request) {
-        LambdaQueryWrapper<CategoryEntity> slugQueryWrapper = new LambdaQueryWrapper<>();
-        slugQueryWrapper.eq(CategoryEntity::getSlug, request.slug());
-
-        CategoryEntity existingCategoryBySlug = categoryMapper.selectOne(slugQueryWrapper);
-        if (existingCategoryBySlug != null) {
-            throw new IllegalArgumentException("Category slug already exists: " + request.slug());
-        }
-
-        LambdaQueryWrapper<CategoryEntity> nameQueryWrapper = new LambdaQueryWrapper<>();
-        nameQueryWrapper.eq(CategoryEntity::getName, request.name());
-
-        CategoryEntity existingCategoryByName = categoryMapper.selectOne(nameQueryWrapper);
-        if (existingCategoryByName != null) {
-            throw new IllegalArgumentException("Category name already exists: " + request.name());
-        }
+        ensureCategorySlugAvailable(request.slug(), null);
+        ensureCategoryNameAvailable(request.name(), null);
 
         CategoryEntity category = new CategoryEntity();
         category.setName(request.name());
@@ -68,22 +56,8 @@ public class CategoryService {
 
     public CategoryEntity updateCategory(Long id, UpdateCategoryRequest request) {
         CategoryEntity category = getCategoryById(id);
-
-        LambdaQueryWrapper<CategoryEntity> slugQueryWrapper = new LambdaQueryWrapper<>();
-        slugQueryWrapper.eq(CategoryEntity::getSlug, request.slug());
-
-        CategoryEntity existingCategoryBySlug = categoryMapper.selectOne(slugQueryWrapper);
-        if (existingCategoryBySlug != null && !existingCategoryBySlug.getId().equals(id)) {
-            throw new IllegalArgumentException("Category slug already exists: " + request.slug());
-        }
-
-        LambdaQueryWrapper<CategoryEntity> nameQueryWrapper = new LambdaQueryWrapper<>();
-        nameQueryWrapper.eq(CategoryEntity::getName, request.name());
-
-        CategoryEntity existingCategoryByName = categoryMapper.selectOne(nameQueryWrapper);
-        if (existingCategoryByName != null && !existingCategoryByName.getId().equals(id)) {
-            throw new IllegalArgumentException("Category name already exists: " + request.name());
-        }
+        ensureCategorySlugAvailable(request.slug(), id);
+        ensureCategoryNameAvailable(request.name(), id);
 
         category.setName(request.name());
         category.setSlug(request.slug());
@@ -98,5 +72,31 @@ public class CategoryService {
     public void deleteCategory(Long id) {
         CategoryEntity category = getCategoryById(id);
         categoryMapper.deleteById(category.getId());
+    }
+
+    private void ensureCategorySlugAvailable(String slug, Long excludedCategoryId) {
+        CategoryEntity existingCategory = findCategoryBySlug(slug);
+        if (existingCategory != null && !existingCategory.getId().equals(excludedCategoryId)) {
+            throw new IllegalArgumentException("Category slug already exists: " + slug);
+        }
+    }
+
+    private void ensureCategoryNameAvailable(String name, Long excludedCategoryId) {
+        CategoryEntity existingCategory = findCategoryByName(name);
+        if (existingCategory != null && !existingCategory.getId().equals(excludedCategoryId)) {
+            throw new IllegalArgumentException("Category name already exists: " + name);
+        }
+    }
+
+    private CategoryEntity findCategoryBySlug(String slug) {
+        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
+        categoryQuery.eq(CategoryEntity::getSlug, slug);
+        return categoryMapper.selectOne(categoryQuery);
+    }
+
+    private CategoryEntity findCategoryByName(String name) {
+        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
+        categoryQuery.eq(CategoryEntity::getName, name);
+        return categoryMapper.selectOne(categoryQuery);
     }
 }

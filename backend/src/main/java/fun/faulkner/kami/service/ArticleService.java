@@ -13,6 +13,7 @@ import fun.faulkner.kami.repository.ArticleTagMapper;
 import fun.faulkner.kami.repository.CategoryMapper;
 import fun.faulkner.kami.repository.TagMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -52,15 +53,9 @@ public class ArticleService {
         return article;
     }
 
+    @Transactional
     public ArticleEntity createArticle(CreateArticleRequest request) {
-        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ArticleEntity::getSlug, request.slug());
-
-        ArticleEntity existingArticle = articleMapper.selectOne(queryWrapper);
-
-        if (existingArticle != null) {
-            throw new IllegalArgumentException("Article slug already exists: " + request.slug());
-        }
+        ensureArticleSlugAvailable(request.slug(), null);
 
         ArticleEntity article = new ArticleEntity();
         LocalDateTime now = LocalDateTime.now();
@@ -74,23 +69,17 @@ public class ArticleService {
         article.setUpdatedAt(now);
         article.setStatus(ArticleStatus.DRAFT.name());
 
-        validateArticleRelations(request.categoryId(), request.tagIds());
+        validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.insert(article);
-        saveArticleTags(article.getId(), request.tagIds());
+        insertArticleTags(article.getId(), request.tagIds());
 
         return article;
     }
 
+    @Transactional
     public ArticleEntity updateArticle(Long id, UpdateArticleRequest request) {
         ArticleEntity article = getArticleById(id);
-
-        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ArticleEntity::getSlug, request.slug());
-
-        ArticleEntity existingArticle = articleMapper.selectOne(queryWrapper);
-        if (existingArticle != null && !existingArticle.getId().equals(id)) {
-            throw new IllegalArgumentException("Article slug already exists: " + request.slug());
-        }
+        ensureArticleSlugAvailable(request.slug(), id);
 
         article.setTitle(request.title());
         article.setSlug(request.slug());
@@ -100,7 +89,7 @@ public class ArticleService {
         article.setCategoryId(request.categoryId());
         article.setUpdatedAt(LocalDateTime.now());
 
-        validateArticleRelations(request.categoryId(), request.tagIds());
+        validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.updateById(article);
         replaceArticleTags(article.getId(), request.tagIds());
         return article;
@@ -118,9 +107,10 @@ public class ArticleService {
             return article;
         }
 
+        LocalDateTime now = LocalDateTime.now();
         article.setStatus(ArticleStatus.PUBLISHED.name());
-        article.setPublishedAt(LocalDateTime.now());
-        article.setUpdatedAt(LocalDateTime.now());
+        article.setPublishedAt(now);
+        article.setUpdatedAt(now);
 
         articleMapper.updateById(article);
         return article;
@@ -133,9 +123,10 @@ public class ArticleService {
             return article;
         }
 
+        LocalDateTime now = LocalDateTime.now();
         article.setStatus(ArticleStatus.DRAFT.name());
         article.setPublishedAt(null);
-        article.setUpdatedAt(LocalDateTime.now());
+        article.setUpdatedAt(now);
 
         articleMapper.updateById(article);
         return article;
@@ -160,7 +151,7 @@ public class ArticleService {
                 .toList();
     }
 
-    private void saveArticleTags(Long articleId, List<Long> tagIds) {
+    private void insertArticleTags(Long articleId, List<Long> tagIds) {
         if (tagIds == null || tagIds.isEmpty()) {
             return;
         }
@@ -175,7 +166,7 @@ public class ArticleService {
         articleTagMapper.insertBatch(articleId, tagIds);
     }
 
-    private void validateArticleRelations(Long categoryId, List<Long> tagIds) {
+    private void validateCategoryAndTags(Long categoryId, List<Long> tagIds) {
         if (categoryId != null && categoryMapper.selectById(categoryId) == null) {
             throw new IllegalArgumentException("Category not found, id=" + categoryId);
         }
@@ -192,5 +183,18 @@ public class ArticleService {
         if (tags.size() != tagIds.size()) {
             throw new IllegalArgumentException("Some tags do not exist");
         }
+    }
+
+    private void ensureArticleSlugAvailable(String slug, Long excludedArticleId) {
+        ArticleEntity existingArticle = findArticleBySlug(slug);
+        if (existingArticle != null && !existingArticle.getId().equals(excludedArticleId)) {
+            throw new IllegalArgumentException("Article slug already exists: " + slug);
+        }
+    }
+
+    private ArticleEntity findArticleBySlug(String slug) {
+        LambdaQueryWrapper<ArticleEntity> articleQuery = new LambdaQueryWrapper<>();
+        articleQuery.eq(ArticleEntity::getSlug, slug);
+        return articleMapper.selectOne(articleQuery);
     }
 }

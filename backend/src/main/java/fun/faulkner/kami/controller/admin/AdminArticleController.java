@@ -47,8 +47,8 @@ public class AdminArticleController {
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size
     ) {
         List<ArticleEntity> articles = articleService.listArticles(page, size);
-        Map<Long, CategoryResponse> categoryResponseMap = getCategoryResponseMap(articles);
-        Map<Long, List<TagResponse>> tagResponseMap = getTagResponseMap(articles);
+        Map<Long, CategoryResponse> categoryResponseMap = buildCategoryResponseMap(articles);
+        Map<Long, List<TagResponse>> tagResponseMap = buildTagResponseMap(articles);
 
         return articles.stream()
                 .map(article -> toArticleSummaryResponse(article, categoryResponseMap, tagResponseMap))
@@ -88,7 +88,7 @@ public class AdminArticleController {
         return toAdminArticleDetailResponse(articleService.unpublishArticle(id));
     }
 
-    private Map<Long, CategoryResponse> getCategoryResponseMap(List<ArticleEntity> articles) {
+    private Map<Long, CategoryResponse> buildCategoryResponseMap(List<ArticleEntity> articles) {
         if (articles == null || articles.isEmpty()) {
             return Map.of();
         }
@@ -114,21 +114,21 @@ public class AdminArticleController {
         return categoryResponseMap;
     }
 
-    private Map<Long, List<TagResponse>> getTagResponseMap(List<ArticleEntity> articles) {
+    private Map<Long, List<TagResponse>> buildTagResponseMap(List<ArticleEntity> articles) {
         if (articles == null || articles.isEmpty()) {
             return Map.of();
         }
 
         List<Long> articleIds = articles.stream().map(ArticleEntity::getId).toList();
-        Map<Long, List<TagEntity>> tagEntityMap = tagService.getTagByArticleIds(articleIds);
+        Map<Long, List<TagEntity>> tagsByArticleId = tagService.listTagsGroupedByArticleIds(articleIds);
 
-        if (tagEntityMap.isEmpty()) {
+        if (tagsByArticleId.isEmpty()) {
             return Map.of();
         }
 
         Map<Long, List<TagResponse>> tagResponseMap = new HashMap<>();
 
-        for (Map.Entry<Long, List<TagEntity>> entry : tagEntityMap.entrySet()) {
+        for (Map.Entry<Long, List<TagEntity>> entry : tagsByArticleId.entrySet()) {
             List<TagResponse> tagResponses = entry.getValue().stream()
                     .map(this::toTagResponse)
                     .toList();
@@ -138,12 +138,12 @@ public class AdminArticleController {
         return tagResponseMap;
     }
 
-    private List<TagResponse> getTagResponses(Long articleId) {
+    private List<TagResponse> listTagResponses(Long articleId) {
         List<TagEntity> tagEntities = articleService.getArticleTags(articleId);
         return tagEntities.stream().map(this::toTagResponse).toList();
     }
 
-    private CategoryResponse getCategoryResponse(Long articleCategoryId) {
+    private CategoryResponse buildCategoryResponse(Long articleCategoryId) {
         CategoryResponse categoryResponse = null;
 
         if (articleCategoryId != null) {
@@ -197,11 +197,11 @@ public class AdminArticleController {
                 article.getContent(),
                 article.getCoverImage(),
                 article.getStatus(),
-                getCategoryResponse(article.getCategoryId()),
+                buildCategoryResponse(article.getCategoryId()),
                 article.getPublishedAt(),
                 article.getCreatedAt(),
                 article.getUpdatedAt(),
-                getTagResponses(article.getId())
+                listTagResponses(article.getId())
         );
     }
 }
