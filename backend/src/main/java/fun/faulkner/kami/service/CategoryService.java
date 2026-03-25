@@ -4,17 +4,24 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import fun.faulkner.kami.dto.request.CreateCategoryRequest;
 import fun.faulkner.kami.dto.request.UpdateCategoryRequest;
 import fun.faulkner.kami.entity.CategoryEntity;
-import fun.faulkner.kami.repository.CategoryMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class CategoryService {
-    private final CategoryMapper categoryMapper;
+    private final fun.faulkner.kami.repository.CategoryMapper categoryMapper;
 
-    public CategoryService(CategoryMapper categoryMapper) {
+    public CategoryService(fun.faulkner.kami.repository.CategoryMapper categoryMapper) {
         this.categoryMapper = categoryMapper;
+    }
+
+    public CategoryEntity getCategoryById(Long id){
+        CategoryEntity category =  categoryMapper.selectById(id);
+        if (category == null){
+            throw new IllegalArgumentException("Category not found, id=" + id);
+        }
+        return category;
     }
 
     public List<CategoryEntity> listCategories() {
@@ -22,6 +29,14 @@ public class CategoryService {
         queryWrapper.orderByAsc(CategoryEntity::getSortOrder);
 
         return categoryMapper.selectList(queryWrapper);
+    }
+
+    public List<CategoryEntity> listCategoriesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return categoryMapper.selectByIds(ids);
     }
 
     public CategoryEntity createCategory(CreateCategoryRequest request) {
@@ -48,14 +63,6 @@ public class CategoryService {
         category.setSortOrder(request.sortOrder());
 
         categoryMapper.insert(category);
-        return category;
-    }
-
-    public CategoryEntity getCategoryById(Long id){
-        CategoryEntity category =  categoryMapper.selectById(id);
-        if (category == null){
-            throw new IllegalArgumentException("Category not found, id=" + id);
-        }
         return category;
     }
 

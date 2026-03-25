@@ -1,5 +1,6 @@
 package fun.faulkner.kami.repository;
 
+import fun.faulkner.kami.repository.projection.ArticleTagRelation;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -33,4 +34,17 @@ public interface ArticleTagMapper {
             "</script>"
     })
     void insertBatch(@Param("articleId") Long articleId, @Param("tagIds") List<Long> tagIds);
+
+    @Select({
+            "<script>",
+            "SELECT article_id, tag_id",
+            "FROM article_tag",
+            "WHERE article_id IN",
+            "<foreach collection='articleIds' item='articleId' open='(' separator=',' close=')'>",
+            "#{articleId}",
+            "</foreach>",
+            "ORDER BY article_id ASC, tag_id ASC",
+            "</script>"
+    })
+    List<ArticleTagRelation> selectByArticleIds(@Param("articleIds") List<Long> articleIds);
 }

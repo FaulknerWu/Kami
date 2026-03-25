@@ -11,13 +11,17 @@ import fun.faulkner.kami.entity.CategoryEntity;
 import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.service.ArticleService;
 import fun.faulkner.kami.service.CategoryService;
+import fun.faulkner.kami.service.TagService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Validated
 @RequestMapping("/api/admin/posts")
@@ -25,10 +29,16 @@ import java.util.List;
 public class AdminArticleController {
     private final ArticleService articleService;
     private final CategoryService categoryService;
+    private final TagService tagService;
 
-    public AdminArticleController(ArticleService articleService, CategoryService categoryService) {
+    public AdminArticleController(
+            ArticleService articleService,
+            CategoryService categoryService,
+            TagService tagService
+    ) {
         this.articleService = articleService;
         this.categoryService = categoryService;
+        this.tagService = tagService;
     }
 
     @GetMapping
@@ -37,8 +47,11 @@ public class AdminArticleController {
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size
     ) {
         List<ArticleEntity> articles = articleService.listArticles(page, size);
+        Map<Long, CategoryResponse> categoryResponseMap = getCategoryResponseMap(articles);
+        Map<Long, List<TagResponse>> tagResponseMap = getTagResponseMap(articles);
+
         return articles.stream()
-                .map(this::toArticleSummaryResponse)
+                .map(article -> toArticleSummaryResponse(article, categoryResponseMap, tagResponseMap))
                 .toList();
     }
 
@@ -75,6 +88,72 @@ public class AdminArticleController {
         return toAdminArticleDetailResponse(articleService.unpublishArticle(id));
     }
 
+    private Map<Long, CategoryResponse> getCategoryResponseMap(List<ArticleEntity> articles) {
+        if (articles == null || articles.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> categoryIds = articles.stream()
+                .map(ArticleEntity::getCategoryId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (categoryIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<CategoryEntity> categories = categoryService.listCategoriesByIds(categoryIds);
+
+        Map<Long, CategoryResponse> categoryResponseMap = new HashMap<>();
+
+        for (CategoryEntity category : categories) {
+            categoryResponseMap.put(category.getId(), toCategoryResponse(category));
+        }
+
+        return categoryResponseMap;
+    }
+
+    private Map<Long, List<TagResponse>> getTagResponseMap(List<ArticleEntity> articles) {
+        if (articles == null || articles.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> articleIds = articles.stream().map(ArticleEntity::getId).toList();
+        Map<Long, List<TagEntity>> tagEntityMap = tagService.getTagByArticleIds(articleIds);
+
+        if (tagEntityMap.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, List<TagResponse>> tagResponseMap = new HashMap<>();
+
+        for (Map.Entry<Long, List<TagEntity>> entry : tagEntityMap.entrySet()) {
+            List<TagResponse> tagResponses = entry.getValue().stream()
+                    .map(this::toTagResponse)
+                    .toList();
+            tagResponseMap.put(entry.getKey(), tagResponses);
+        }
+
+        return tagResponseMap;
+    }
+
+    private List<TagResponse> getTagResponses(Long articleId) {
+        List<TagEntity> tagEntities = articleService.getArticleTags(articleId);
+        return tagEntities.stream().map(this::toTagResponse).toList();
+    }
+
+    private CategoryResponse getCategoryResponse(Long articleCategoryId) {
+        CategoryResponse categoryResponse = null;
+
+        if (articleCategoryId != null) {
+            CategoryEntity category = categoryService.getCategoryById(articleCategoryId);
+            categoryResponse = toCategoryResponse(category);
+        }
+
+        return categoryResponse;
+    }
+
     private TagResponse toTagResponse(TagEntity tag) {
         return new TagResponse(
                 tag.getId(),
@@ -93,25 +172,23 @@ public class AdminArticleController {
         );
     }
 
-    private ArticleSummaryResponse toArticleSummaryResponse(ArticleEntity article) {
+    private ArticleSummaryResponse toArticleSummaryResponse(
+            ArticleEntity article,
+            Map<Long, CategoryResponse> categoryResponseMap,
+            Map<Long, List<TagResponse>> tagResponseMap
+    ) {
         return new ArticleSummaryResponse(
                 article.getId(),
                 article.getTitle(),
                 article.getSlug(),
-                article.getSummary()
+                article.getSummary(),
+                article.getStatus(),
+                categoryResponseMap.get(article.getCategoryId()),
+                tagResponseMap.getOrDefault(article.getId(), List.of())
         );
     }
 
     private AdminArticleDetailResponse toAdminArticleDetailResponse(ArticleEntity article) {
-        List<TagEntity> tagEntities = articleService.getArticleTags(article.getId());
-        List<TagResponse> tagResponses = tagEntities.stream().map(this::toTagResponse).toList();
-        CategoryResponse categoryResponse = null;
-
-        if (article.getCategoryId() != null) {
-            CategoryEntity category = categoryService.getCategoryById(article.getCategoryId());
-            categoryResponse = toCategoryResponse(category);
-        }
-
         return new AdminArticleDetailResponse(
                 article.getId(),
                 article.getTitle(),
@@ -120,11 +197,11 @@ public class AdminArticleController {
                 article.getContent(),
                 article.getCoverImage(),
                 article.getStatus(),
-                categoryResponse,
+                getCategoryResponse(article.getCategoryId()),
                 article.getPublishedAt(),
                 article.getCreatedAt(),
                 article.getUpdatedAt(),
-                tagResponses
+                getTagResponses(article.getId())
         );
     }
 }

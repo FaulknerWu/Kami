@@ -5,26 +5,32 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import fun.faulkner.kami.dto.request.CreateArticleRequest;
 import fun.faulkner.kami.dto.request.UpdateArticleRequest;
 import fun.faulkner.kami.entity.ArticleEntity;
+import fun.faulkner.kami.entity.CategoryEntity;
 import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.enums.ArticleStatus;
 import fun.faulkner.kami.repository.ArticleMapper;
 import fun.faulkner.kami.repository.ArticleTagMapper;
+import fun.faulkner.kami.repository.CategoryMapper;
 import fun.faulkner.kami.repository.TagMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
 public class ArticleService {
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+    private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
 
-    public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, TagMapper tagMapper) {
+    public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, CategoryMapper categoryMapper, TagMapper tagMapper) {
         this.articleMapper = articleMapper;
         this.articleTagMapper = articleTagMapper;
+        this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
     }
 
@@ -68,6 +74,7 @@ public class ArticleService {
         article.setUpdatedAt(now);
         article.setStatus(ArticleStatus.DRAFT.name());
 
+        validateArticleRelations(request.categoryId(), request.tagIds());
         articleMapper.insert(article);
         saveArticleTags(article.getId(), request.tagIds());
 
@@ -93,6 +100,7 @@ public class ArticleService {
         article.setCategoryId(request.categoryId());
         article.setUpdatedAt(LocalDateTime.now());
 
+        validateArticleRelations(request.categoryId(), request.tagIds());
         articleMapper.updateById(article);
         replaceArticleTags(article.getId(), request.tagIds());
         return article;
@@ -139,7 +147,17 @@ public class ArticleService {
             return List.of();
         }
 
-        return tagMapper.selectByIds(tagIds);
+        List<TagEntity> tags = tagMapper.selectByIds(tagIds);
+        Map<Long, TagEntity> tagMap = new HashMap<>();
+
+        for (TagEntity tag : tags) {
+            tagMap.put(tag.getId(), tag);
+        }
+
+        return tagIds.stream()
+                .map(tagMap::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private void saveArticleTags(Long articleId, List<Long> tagIds) {
@@ -155,5 +173,24 @@ public class ArticleService {
             return;
         }
         articleTagMapper.insertBatch(articleId, tagIds);
+    }
+
+    private void validateArticleRelations(Long categoryId, List<Long> tagIds) {
+        if (categoryId != null && categoryMapper.selectById(categoryId) == null) {
+            throw new IllegalArgumentException("Category not found, id=" + categoryId);
+        }
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        List<Long> uniqueTagIds = tagIds.stream().distinct().toList();
+
+        if (tagIds.size() != uniqueTagIds.size()) {
+            throw new IllegalArgumentException("Tag ids contain duplicates");
+        }
+
+        List<TagEntity> tags = tagMapper.selectByIds(uniqueTagIds);
+        if (tags.size() != tagIds.size()) {
+            throw new IllegalArgumentException("Some tags do not exist");
+        }
     }
 }
