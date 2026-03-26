@@ -15,3 +15,9 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 
+kami:
+  auth:
+    admin-password: ${KAMI_ADMIN_PASSWORD:{noop}change-me}
+    jwt-secret: ${KAMI_JWT_SECRET:change-me-change-me-change-me-change-me}
+    issuer: ${KAMI_JWT_ISSUER:Kami}
+    access-token-ttl: ${KAMI_ACCESS_TOKEN_TTL:PT2H}
