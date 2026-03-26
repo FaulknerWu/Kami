@@ -3,6 +3,7 @@ package fun.faulkner.kami.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import fun.faulkner.kami.enums.ArticleStatus;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +17,7 @@ public class ArticleEntity {
     private String summary;
     private String content;
     private String coverImage;
-    private String status;
+    private ArticleStatus status;
     private Long categoryId;
     private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
@@ -62,11 +63,11 @@ public class ArticleEntity {
         this.content = content;
     }
 
-    public String getStatus() {
+    public ArticleStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ArticleStatus status) {
         this.status = status;
     }
 

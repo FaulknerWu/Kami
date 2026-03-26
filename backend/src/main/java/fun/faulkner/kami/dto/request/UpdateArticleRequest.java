@@ -28,4 +28,7 @@ public record UpdateArticleRequest(
 
         List<Long> tagIds
 ) {
+    public UpdateArticleRequest {
+        tagIds = tagIds == null ? List.of() : List.copyOf(tagIds);
+    }
 }

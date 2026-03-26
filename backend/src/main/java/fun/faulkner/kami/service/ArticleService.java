@@ -67,7 +67,7 @@ public class ArticleService {
         article.setCategoryId(request.categoryId());
         article.setCreatedAt(now);
         article.setUpdatedAt(now);
-        article.setStatus(ArticleStatus.DRAFT.name());
+        article.setStatus(ArticleStatus.DRAFT);
 
         validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.insert(article);
@@ -103,12 +103,12 @@ public class ArticleService {
     public ArticleEntity publishArticle(Long id) {
         ArticleEntity article = getArticleById(id);
 
-        if (Objects.equals(article.getStatus(), ArticleStatus.PUBLISHED.name())) {
+        if (article.getStatus() == ArticleStatus.PUBLISHED) {
             return article;
         }
 
         LocalDateTime now = LocalDateTime.now();
-        article.setStatus(ArticleStatus.PUBLISHED.name());
+        article.setStatus(ArticleStatus.PUBLISHED);
         article.setPublishedAt(now);
         article.setUpdatedAt(now);
 
@@ -119,12 +119,12 @@ public class ArticleService {
     public ArticleEntity unpublishArticle(Long id) {
         ArticleEntity article = getArticleById(id);
 
-        if (Objects.equals(article.getStatus(), ArticleStatus.DRAFT.name())) {
+        if (article.getStatus() == ArticleStatus.DRAFT) {
             return article;
         }
 
         LocalDateTime now = LocalDateTime.now();
-        article.setStatus(ArticleStatus.DRAFT.name());
+        article.setStatus(ArticleStatus.DRAFT);
         article.setPublishedAt(null);
         article.setUpdatedAt(now);
 
@@ -152,7 +152,7 @@ public class ArticleService {
     }
 
     private void insertArticleTags(Long articleId, List<Long> tagIds) {
-        if (tagIds == null || tagIds.isEmpty()) {
+        if (tagIds.isEmpty()) {
             return;
         }
         articleTagMapper.insertBatch(articleId, tagIds);
@@ -160,7 +160,7 @@ public class ArticleService {
 
     private void replaceArticleTags(Long articleId, List<Long> tagIds) {
         articleTagMapper.deleteByArticleId(articleId);
-        if (tagIds == null || tagIds.isEmpty()) {
+        if (tagIds.isEmpty()) {
             return;
         }
         articleTagMapper.insertBatch(articleId, tagIds);
@@ -170,7 +170,7 @@ public class ArticleService {
         if (categoryId != null && categoryMapper.selectById(categoryId) == null) {
             throw new IllegalArgumentException("Category not found, id=" + categoryId);
         }
-        if (tagIds == null || tagIds.isEmpty()) {
+        if (tagIds.isEmpty()) {
             return;
         }
         List<Long> uniqueTagIds = tagIds.stream().distinct().toList();

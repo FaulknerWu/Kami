@@ -1,5 +1,7 @@
 package fun.faulkner.kami.dto.response;
 
+import fun.faulkner.kami.enums.ArticleStatus;
+
 import java.util.List;
 
 public record ArticleSummaryResponse(
@@ -7,8 +9,11 @@ public record ArticleSummaryResponse(
         String title,
         String slug,
         String summary,
-        String status,
+        ArticleStatus status,
         CategoryResponse category,
         List<TagResponse> tags
 ) {
+    public ArticleSummaryResponse {
+        tags = tags == null ? List.of() : List.copyOf(tags);
+    }
 }

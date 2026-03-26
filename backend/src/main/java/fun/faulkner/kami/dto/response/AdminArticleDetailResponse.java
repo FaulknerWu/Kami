@@ -1,5 +1,7 @@
 package fun.faulkner.kami.dto.response;
 
+import fun.faulkner.kami.enums.ArticleStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,11 +12,14 @@ public record AdminArticleDetailResponse(
         String summary,
         String content,
         String coverImage,
-        String status,
+        ArticleStatus status,
         CategoryResponse category,
         LocalDateTime publishedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<TagResponse> tags
 ) {
+    public AdminArticleDetailResponse {
+        tags = tags == null ? List.of() : List.copyOf(tags);
+    }
 }

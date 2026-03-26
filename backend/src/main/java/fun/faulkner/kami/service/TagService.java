@@ -79,7 +79,7 @@ public class TagService {
             }
 
             tagsByArticleId
-                    .computeIfAbsent(articleId, ignored -> new ArrayList<>())
+                    .computeIfAbsent(articleId, _ -> new ArrayList<>())
                     .add(tag);
         }
 
