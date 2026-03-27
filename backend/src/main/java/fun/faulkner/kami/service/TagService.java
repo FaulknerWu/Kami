@@ -7,6 +7,7 @@ import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.repository.ArticleTagMapper;
 import fun.faulkner.kami.repository.TagMapper;
 import fun.faulkner.kami.repository.projection.ArticleTagRelation;
+import fun.faulkner.kami.repository.projection.TagArticleCount;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -36,6 +37,20 @@ public class TagService {
         }
 
         return tagMapper.selectByIds(ids);
+    }
+
+    public Map<Long, Long> countPublishedArticlesByTag() {
+        List<TagArticleCount> counts = tagMapper.countPublishedArticlesByTag();
+        if (counts.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, Long> articleCountMap = new HashMap<>();
+        for (TagArticleCount count : counts) {
+            articleCountMap.put(count.tagId(), count.articleCount());
+        }
+
+        return articleCountMap;
     }
 
     public TagEntity getTagById(Long id) {

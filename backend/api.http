@@ -26,3 +26,9 @@ GET http://localhost:8080/api/posts
 
 ### Get Public Post By Slug
 GET http://localhost:8080/api/posts/first-post
+
+### Get Public Categories
+GET http://localhost:8080/api/categories
+
+### Get Public Tags
+GET http://localhost:8080/api/tags

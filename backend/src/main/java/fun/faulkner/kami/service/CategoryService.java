@@ -5,9 +5,12 @@ import fun.faulkner.kami.dto.request.CreateCategoryRequest;
 import fun.faulkner.kami.dto.request.UpdateCategoryRequest;
 import fun.faulkner.kami.entity.CategoryEntity;
 import fun.faulkner.kami.repository.CategoryMapper;
+import fun.faulkner.kami.repository.projection.CategoryArticleCount;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CategoryService {
@@ -38,6 +41,20 @@ public class CategoryService {
         }
 
         return categoryMapper.selectByIds(ids);
+    }
+
+    public Map<Long, Long> countPublishedArticlesByCategory() {
+        List<CategoryArticleCount> counts = categoryMapper.countPublishedArticlesByCategory();
+        if (counts.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, Long> articleCountMap = new HashMap<>();
+        for (CategoryArticleCount count : counts) {
+            articleCountMap.put(count.categoryId(), count.articleCount());
+        }
+
+        return articleCountMap;
     }
 
     public CategoryEntity createCategory(CreateCategoryRequest request) {
