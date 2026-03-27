@@ -16,3 +16,13 @@ GET http://localhost:8080/api/admin/posts
 ### Get Admin Posts With Token
 GET http://localhost:8080/api/admin/posts
 Authorization: Bearer {{accessToken}}
+
+### Publish Article
+PUT http://localhost:8080/api/admin/posts/1/publish
+Authorization: Bearer {{accessToken}}
+
+### Get Public Posts
+GET http://localhost:8080/api/posts
+
+### Get Public Post By Slug
+GET http://localhost:8080/api/posts/first-post

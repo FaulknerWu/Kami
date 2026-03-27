@@ -19,6 +19,14 @@ public interface ArticleTagMapper {
             """)
     List<Long> selectTagIdsByArticleId(@Param("articleId") Long articleId);
 
+    @Select("""
+            SELECT article_id
+            FROM article_tag
+            WHERE tag_id = #{tagId}
+            ORDER BY article_id ASC
+            """)
+    List<Long> selectArticleIdsByTagId(@Param("tagId") Long tagId);
+
     @Delete("""
             DELETE FROM article_tag
             WHERE article_id = #{articleId}

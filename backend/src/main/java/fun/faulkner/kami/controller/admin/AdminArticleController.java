@@ -1,10 +1,12 @@
 package fun.faulkner.kami.controller.admin;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import fun.faulkner.kami.dto.request.CreateArticleRequest;
 import fun.faulkner.kami.dto.request.UpdateArticleRequest;
 import fun.faulkner.kami.dto.response.AdminArticleDetailResponse;
 import fun.faulkner.kami.dto.response.ArticleSummaryResponse;
 import fun.faulkner.kami.dto.response.CategoryResponse;
+import fun.faulkner.kami.dto.response.PageResponse;
 import fun.faulkner.kami.dto.response.TagResponse;
 import fun.faulkner.kami.entity.ArticleEntity;
 import fun.faulkner.kami.entity.CategoryEntity;
@@ -40,17 +42,26 @@ public class AdminArticleController {
     }
 
     @GetMapping
-    public List<ArticleSummaryResponse> listArticles(
+    public PageResponse<ArticleSummaryResponse> listArticles(
             @RequestParam(defaultValue = "1") @Min(1) long page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) long size
     ) {
-        List<ArticleEntity> articles = articleService.listArticles(page, size);
+        Page<ArticleEntity> articlePage = articleService.listArticles(page, size);
+        List<ArticleEntity> articles = articlePage.getRecords();
         Map<Long, CategoryResponse> categoryResponseMap = buildCategoryResponseMap(articles);
         Map<Long, List<TagResponse>> tagResponseMap = buildTagResponseMap(articles);
 
-        return articles.stream()
+        List<ArticleSummaryResponse> items = articles.stream()
                 .map(article -> toArticleSummaryResponse(article, categoryResponseMap, tagResponseMap))
                 .toList();
+
+        return new PageResponse<>(
+                items,
+                articlePage.getCurrent(),
+                articlePage.getSize(),
+                articlePage.getTotal(),
+                articlePage.getPages()
+        );
     }
 
     @GetMapping("/{id}")

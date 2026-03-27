@@ -35,14 +35,47 @@ public class ArticleService {
         this.tagMapper = tagMapper;
     }
 
-    public List<ArticleEntity> listArticles(long page, long size) {
+    public Page<ArticleEntity> listArticles(long page, long size) {
         Page<ArticleEntity> pageRequest = new Page<>(page, size);
 
         LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByDesc(ArticleEntity::getUpdatedAt);
 
-        Page<ArticleEntity> pageResult = articleMapper.selectPage(pageRequest, queryWrapper);
-        return pageResult.getRecords();
+        return articleMapper.selectPage(pageRequest, queryWrapper);
+    }
+
+    public Page<ArticleEntity> listPublishedArticles(long page, long size, String categorySlug, String tagSlug) {
+        Page<ArticleEntity> pageRequest = new Page<>(page, size);
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+
+        queryWrapper.eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED);
+
+        if (categorySlug != null && !categorySlug.isBlank()) {
+            CategoryEntity category = findCategoryBySlug(categorySlug);
+            if (category == null) {
+                return emptyArticlePage(page, size);
+            }
+            queryWrapper.eq(ArticleEntity::getCategoryId, category.getId());
+        }
+
+        if (tagSlug != null && !tagSlug.isBlank()) {
+            TagEntity tag = findTagBySlug(tagSlug);
+            if (tag == null) {
+                return emptyArticlePage(page, size);
+            }
+
+            List<Long> articleIds = articleTagMapper.selectArticleIdsByTagId(tag.getId());
+            if (articleIds.isEmpty()) {
+                return emptyArticlePage(page, size);
+            }
+
+            queryWrapper.in(ArticleEntity::getId, articleIds);
+        }
+
+        queryWrapper.orderByDesc(ArticleEntity::getPublishedAt)
+                .orderByDesc(ArticleEntity::getId);
+
+        return articleMapper.selectPage(pageRequest, queryWrapper);
     }
 
     public ArticleEntity getArticleById(Long id) {
@@ -50,6 +83,19 @@ public class ArticleService {
         if (article == null) {
             throw new IllegalArgumentException("Article not found, id=" + id);
         }
+        return article;
+    }
+
+    public ArticleEntity getPublishedArticleBySlug(String slug) {
+        LambdaQueryWrapper<ArticleEntity> articleQuery = new LambdaQueryWrapper<>();
+        articleQuery.eq(ArticleEntity::getSlug, slug)
+                .eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED);
+
+        ArticleEntity article = articleMapper.selectOne(articleQuery);
+        if (article == null) {
+            throw new IllegalArgumentException("Published article not found, slug=" + slug);
+        }
+
         return article;
     }
 
@@ -196,5 +242,24 @@ public class ArticleService {
         LambdaQueryWrapper<ArticleEntity> articleQuery = new LambdaQueryWrapper<>();
         articleQuery.eq(ArticleEntity::getSlug, slug);
         return articleMapper.selectOne(articleQuery);
+    }
+
+    private CategoryEntity findCategoryBySlug(String slug) {
+        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
+        categoryQuery.eq(CategoryEntity::getSlug, slug);
+        return categoryMapper.selectOne(categoryQuery);
+    }
+
+    private TagEntity findTagBySlug(String slug) {
+        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
+        tagQuery.eq(TagEntity::getSlug, slug);
+        return tagMapper.selectOne(tagQuery);
+    }
+
+    private Page<ArticleEntity> emptyArticlePage(long page, long size) {
+        Page<ArticleEntity> pageResult = new Page<>(page, size);
+        pageResult.setRecords(List.of());
+        pageResult.setTotal(0L);
+        return pageResult;
     }
 }
