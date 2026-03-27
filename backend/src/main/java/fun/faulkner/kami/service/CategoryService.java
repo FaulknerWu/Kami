@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import fun.faulkner.kami.dto.request.CreateCategoryRequest;
 import fun.faulkner.kami.dto.request.UpdateCategoryRequest;
 import fun.faulkner.kami.entity.CategoryEntity;
+import fun.faulkner.kami.exception.ResourceNotFoundException;
 import fun.faulkner.kami.repository.CategoryMapper;
 import fun.faulkner.kami.repository.projection.CategoryArticleCount;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,7 @@ public class CategoryService {
     public CategoryEntity getCategoryById(Long id) {
         CategoryEntity category = categoryMapper.selectById(id);
         if (category == null) {
-            throw new IllegalArgumentException("Category not found, id=" + id);
+            throw new ResourceNotFoundException("Category not found, id=" + id);
         }
         return category;
     }

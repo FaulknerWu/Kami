@@ -8,6 +8,7 @@ import fun.faulkner.kami.entity.ArticleEntity;
 import fun.faulkner.kami.entity.CategoryEntity;
 import fun.faulkner.kami.entity.TagEntity;
 import fun.faulkner.kami.enums.ArticleStatus;
+import fun.faulkner.kami.exception.ResourceNotFoundException;
 import fun.faulkner.kami.repository.ArticleMapper;
 import fun.faulkner.kami.repository.ArticleTagMapper;
 import fun.faulkner.kami.repository.CategoryMapper;
@@ -81,7 +82,7 @@ public class ArticleService {
     public ArticleEntity getArticleById(Long id) {
         ArticleEntity article = articleMapper.selectById(id);
         if (article == null) {
-            throw new IllegalArgumentException("Article not found, id=" + id);
+            throw new ResourceNotFoundException("Article not found, id=" + id);
         }
         return article;
     }
@@ -93,7 +94,7 @@ public class ArticleService {
 
         ArticleEntity article = articleMapper.selectOne(articleQuery);
         if (article == null) {
-            throw new IllegalArgumentException("Published article not found, slug=" + slug);
+            throw new ResourceNotFoundException("Published article not found, slug=" + slug);
         }
 
         return article;
@@ -214,7 +215,7 @@ public class ArticleService {
 
     private void validateCategoryAndTags(Long categoryId, List<Long> tagIds) {
         if (categoryId != null && categoryMapper.selectById(categoryId) == null) {
-            throw new IllegalArgumentException("Category not found, id=" + categoryId);
+            throw new ResourceNotFoundException("Category not found, id=" + categoryId);
         }
         if (tagIds.isEmpty()) {
             return;

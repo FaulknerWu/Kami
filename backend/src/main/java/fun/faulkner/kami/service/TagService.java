@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import fun.faulkner.kami.dto.request.CreateTagRequest;
 import fun.faulkner.kami.dto.request.UpdateTagRequest;
 import fun.faulkner.kami.entity.TagEntity;
+import fun.faulkner.kami.exception.ResourceNotFoundException;
 import fun.faulkner.kami.repository.ArticleTagMapper;
 import fun.faulkner.kami.repository.TagMapper;
 import fun.faulkner.kami.repository.projection.ArticleTagRelation;
@@ -56,7 +57,7 @@ public class TagService {
     public TagEntity getTagById(Long id) {
         TagEntity tag = tagMapper.selectById(id);
         if (tag == null) {
-            throw new IllegalArgumentException("Tag not found, id=" + id);
+            throw new ResourceNotFoundException("Tag not found, id=" + id);
         }
         return tag;
     }
