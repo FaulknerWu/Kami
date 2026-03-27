@@ -19,7 +19,7 @@ public class AdminAuthService {
 
     public String authenticate(String rawPassword) {
         if (!passwordEncoder.matches(rawPassword, authProperties.adminPassword())) {
-            throw new BadCredentialsException("管理员密码错误");
+            throw new BadCredentialsException("Invalid admin credentials");
         }
 
         return ADMIN_SUBJECT;

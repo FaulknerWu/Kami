@@ -29,6 +29,10 @@ dependencies {
 	implementation("com.baomidou:mybatis-plus-spring-boot4-starter:3.5.15")
 	implementation("com.baomidou:mybatis-plus-jsqlparser:3.5.15")
 
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	implementation("org.springframework.security:spring-security-oauth2-jose")
+
+
 	runtimeOnly("org.postgresql:postgresql")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 

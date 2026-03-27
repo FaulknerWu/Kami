@@ -175,13 +175,20 @@ public class AdminArticleController {
             Map<Long, CategoryResponse> categoryResponseMap,
             Map<Long, List<TagResponse>> tagResponseMap
     ) {
+        CategoryResponse categoryResponse = null;
+        Long categoryId = article.getCategoryId();
+
+        if (categoryId != null) {
+            categoryResponse = categoryResponseMap.get(categoryId);
+        }
+
         return new ArticleSummaryResponse(
                 article.getId(),
                 article.getTitle(),
                 article.getSlug(),
                 article.getSummary(),
                 article.getStatus(),
-                categoryResponseMap.get(article.getCategoryId()),
+                categoryResponse,
                 tagResponseMap.getOrDefault(article.getId(), List.of())
         );
     }
