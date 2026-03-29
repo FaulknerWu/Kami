@@ -9,6 +9,8 @@ public record ArticleSummaryResponse(
         String title,
         String slug,
         String summary,
+        Integer wordCount,
+        Integer readingTimeMinutes,
         ArticleStatus status,
         CategoryResponse category,
         List<TagResponse> tags

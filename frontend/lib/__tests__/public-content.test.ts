@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  toAboutPageViewModel,
   toArchiveYearGroups,
   toArticleCardViewModel,
   toArticleDetailViewModel,
   toCategoryListItemViewModels,
+  toSiteProfileViewModel,
   toSidebarStatsViewModel,
   toTagListItemViewModels,
 } from "../adapters/public-content";
 import type {
+  ApiPublicPage,
   ApiPostDetail,
   ApiPostSummary,
   ApiPublicCategory,
+  ApiPublicSiteProfile,
   ApiPublicTag,
 } from "../api/types";
 
@@ -20,6 +24,8 @@ const basePostSummary: ApiPostSummary = {
   slug: "react-server-components",
   summary: "这是一段用于计算阅读时长的文章摘要，用来验证适配层能输出稳定的卡片数据。",
   coverImage: "https://example.com/cover.jpg",
+  wordCount: 480,
+  readingTimeMinutes: 2,
   publishedAt: "2026-03-29T12:00:00",
   category: {
     id: 1,
@@ -45,7 +51,7 @@ describe("public content adapters", () => {
     expect(result.categoryName).toBe("前端开发");
     expect(result.dateLabel).toBe("2026-03-29");
     expect(result.tags).toHaveLength(1);
-    expect(result.readTimeLabel).toMatch(/min read$/);
+    expect(result.readTimeLabel).toBe("2 min read");
   });
 
   it("toArticleDetailViewModel 应该保留详情页正文与封面", () => {
@@ -130,5 +136,66 @@ describe("public content adapters", () => {
       categories: 8,
       tags: 64,
     });
+  });
+
+  it("toSiteProfileViewModel 应该映射站点资料与联系方式", () => {
+    const profile: ApiPublicSiteProfile = {
+      id: 1,
+      siteName: "Felix_SANA",
+      heroTitle: "Felix_SANA 'S BLOG",
+      heroTagline: "Beyond your heart and light",
+      authorName: "Felix_SANA",
+      authorBio: "一个普普通通大学生，现在是社畜了……",
+      avatarUrl: "https://example.com/avatar.jpg",
+      coverImageUrl: "https://example.com/cover.jpg",
+      canonicalBaseUrl: null,
+      defaultShareImageUrl: null,
+      contacts: [
+        {
+          id: 1,
+          type: "EMAIL",
+          label: "hello@example.com",
+          value: "hello@example.com",
+          url: null,
+          sortOrder: 0,
+          isPublic: true,
+        },
+      ],
+    };
+
+    const result = toSiteProfileViewModel(profile);
+
+    expect(result.heroTitle).toBe("Felix_SANA 'S BLOG");
+    expect(result.contacts[0].typeLabel).toBe("Email");
+    expect(result.contacts[0].href).toBe("mailto:hello@example.com");
+  });
+
+  it("toAboutPageViewModel 应该从 payload 中读取 about 页面结构化数据", () => {
+    const aboutPage: ApiPublicPage = {
+      slug: "about",
+      title: "关于我",
+      summary: "关于页摘要",
+      coverImage: "https://example.com/about-cover.jpg",
+      renderMode: "CODED",
+      contentMarkdown: null,
+      payload: {
+        sections: [
+          {
+            title: "阴暗地爬行中",
+            paragraphs: ["第一段", "第二段"],
+          },
+        ],
+        skills: ["React", "Spring Boot"],
+      },
+      seoTitle: "关于我 - Felix_SANA",
+      seoDescription: "关于我",
+      publishedAt: "2026-03-29T12:00:00",
+    };
+
+    const result = toAboutPageViewModel(aboutPage);
+
+    expect(result.slug).toBe("about");
+    expect(result.sections[0]?.title).toBe("阴暗地爬行中");
+    expect(result.skills).toEqual(["React", "Spring Boot"]);
   });
 });

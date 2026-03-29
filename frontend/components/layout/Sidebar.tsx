@@ -2,28 +2,34 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   toCategoryListItemViewModels,
+  toSiteProfileViewModel,
   toSidebarStatsViewModel,
   toTagListItemViewModels,
 } from "@/lib/adapters/public-content";
-import { getPublicSidebarData } from "@/lib/api/public-content";
-import { mockSiteProfile } from "@/lib/mocks/site-profile";
+import { getPublicSidebarData, getPublicSiteProfile } from "@/lib/api/public-content";
 
 async function loadSidebarViewModel() {
-  try {
-    const sidebarData = await getPublicSidebarData();
+  const [taxonomyResult, siteProfileResult] = await Promise.allSettled([
+    getPublicSidebarData(),
+    getPublicSiteProfile(),
+  ]);
 
-    return {
-      categories: toCategoryListItemViewModels(sidebarData.categories),
-      tags: toTagListItemViewModels(sidebarData.tags),
-      stats: toSidebarStatsViewModel(
-        sidebarData.totalArticles,
-        sidebarData.categories.length,
-        sidebarData.tags.length,
-      ),
-    };
-  } catch {
-    return null;
-  }
+  return {
+    taxonomy: taxonomyResult.status === "fulfilled"
+      ? {
+          categories: toCategoryListItemViewModels(taxonomyResult.value.categories),
+          tags: toTagListItemViewModels(taxonomyResult.value.tags),
+          stats: toSidebarStatsViewModel(
+            taxonomyResult.value.totalArticles,
+            taxonomyResult.value.categories.length,
+            taxonomyResult.value.tags.length,
+          ),
+        }
+      : null,
+    siteProfile: siteProfileResult.status === "fulfilled"
+      ? toSiteProfileViewModel(siteProfileResult.value)
+      : null,
+  };
 }
 
 export async function Sidebar() {
@@ -31,42 +37,41 @@ export async function Sidebar() {
 
   return (
     <aside className="space-y-10">
-      <div
-        className="flex flex-col items-center text-center"
-        data-kami-mock-source="adr-0004-site-profile"
-      >
-        <div className="relative mb-4 h-24 w-24 overflow-hidden rounded-full border border-zinc-200">
-          <Image
-            src={mockSiteProfile.avatar}
-            alt={mockSiteProfile.name}
-            fill
-            className="object-cover"
-            sizes="96px"
-          />
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-4 h-24 w-24 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+          {sidebarViewModel.siteProfile?.avatarUrl ? (
+            <Image
+              src={sidebarViewModel.siteProfile.avatarUrl}
+              alt={sidebarViewModel.siteProfile.authorName}
+              fill
+              className="object-cover"
+              sizes="96px"
+            />
+          ) : null}
         </div>
         <h2 className="text-lg font-bold tracking-tight text-zinc-900">
-          {mockSiteProfile.name}
+          {sidebarViewModel.siteProfile?.authorName ?? "站点资料暂时不可用"}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          {mockSiteProfile.bio}
+          {sidebarViewModel.siteProfile?.authorBio ?? "当前无法从后端加载作者资料。"}
         </p>
 
         <div className="mt-6 flex w-full justify-center gap-8 border-y border-zinc-100 py-4">
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-zinc-900">
-              {sidebarViewModel?.stats.articles ?? 0}
+              {sidebarViewModel.taxonomy?.stats.articles ?? 0}
             </span>
             <span className="text-xs font-medium text-zinc-500">文章</span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-zinc-900">
-              {sidebarViewModel?.stats.categories ?? 0}
+              {sidebarViewModel.taxonomy?.stats.categories ?? 0}
             </span>
             <span className="text-xs font-medium text-zinc-500">分类</span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-zinc-900">
-              {sidebarViewModel?.stats.tags ?? 0}
+              {sidebarViewModel.taxonomy?.stats.tags ?? 0}
             </span>
             <span className="text-xs font-medium text-zinc-500">标签</span>
           </div>
@@ -77,9 +82,9 @@ export async function Sidebar() {
         <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-900">
           分类目录
         </h3>
-        {sidebarViewModel ? (
+        {sidebarViewModel.taxonomy ? (
           <ul className="space-y-2">
-            {sidebarViewModel.categories.map((category) => (
+            {sidebarViewModel.taxonomy.categories.map((category) => (
               <li key={category.id}>
                 <Link
                   href={`/categories/${category.slug}`}
@@ -107,9 +112,9 @@ export async function Sidebar() {
         <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-900">
           热门标签
         </h3>
-        {sidebarViewModel ? (
+        {sidebarViewModel.taxonomy ? (
           <div className="flex flex-wrap gap-2">
-            {sidebarViewModel.tags.map((tag) => (
+            {sidebarViewModel.taxonomy.tags.map((tag) => (
               <Link
                 key={tag.id}
                 href={`/tags/${tag.slug}`}

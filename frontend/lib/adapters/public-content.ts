@@ -1,11 +1,15 @@
 import type {
+  ApiPageRenderMode,
   ApiPostDetail,
   ApiPostSummary,
+  ApiPublicPage,
   ApiPublicCategory,
+  ApiPublicSiteProfile,
   ApiPublicTag,
+  ApiSiteContact,
 } from "@/lib/api/types";
 import {
-  estimateReadTimeLabel,
+  formatReadTimeLabel,
   formatIsoDateLabel,
   formatMonthDayLabel,
   formatYearLabel,
@@ -64,6 +68,43 @@ export interface SidebarStatsViewModel {
   tags: number;
 }
 
+export interface SiteContactViewModel {
+  id: number;
+  type: string;
+  typeLabel: string;
+  label: string;
+  value: string | null;
+  href: string | null;
+}
+
+export interface SiteProfileViewModel {
+  id: number;
+  siteName: string;
+  heroTitle: string;
+  heroTagline: string | null;
+  authorName: string;
+  authorBio: string | null;
+  avatarUrl: string | null;
+  coverImageUrl: string | null;
+  contacts: SiteContactViewModel[];
+}
+
+export interface AboutSectionViewModel {
+  title: string;
+  paragraphs: string[];
+}
+
+export interface AboutPageViewModel {
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImage: string | null;
+  renderMode: ApiPageRenderMode;
+  contentMarkdown: string | null;
+  sections: AboutSectionViewModel[];
+  skills: string[];
+}
+
 function toTagBadgeViewModel(tag: { id: number; name: string; slug: string }): TagBadgeViewModel {
   return {
     id: tag.id,
@@ -80,9 +121,67 @@ function resolveCategorySlug(category: ApiPostSummary["category"]) {
   return category?.slug ?? null;
 }
 
-// TODO(ADR-0004): 后端暂未提供阅读时长字段，当前先按摘要长度统一估算，保证列表页与详情页一致。
-function resolveReadTimeLabel(summary: string) {
-  return estimateReadTimeLabel(summary);
+function resolveReadTimeLabel(readingTimeMinutes: number) {
+  return formatReadTimeLabel(readingTimeMinutes);
+}
+
+function resolveContactHref(contact: ApiSiteContact) {
+  if (contact.url?.trim()) {
+    return contact.url;
+  }
+
+  if (contact.type === "EMAIL" && contact.value?.trim()) {
+    return `mailto:${contact.value}`;
+  }
+
+  return null;
+}
+
+function resolveContactTypeLabel(type: string) {
+  switch (type) {
+    case "EMAIL":
+      return "Email";
+    case "GITHUB":
+      return "GitHub";
+    default:
+      return type;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function readStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function readAboutSections(value: unknown): AboutSectionViewModel[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const title = readString(item.title);
+    if (!title) {
+      return [];
+    }
+
+    return [{
+      title,
+      paragraphs: readStringArray(item.paragraphs),
+    }];
+  });
 }
 
 export function toArticleCardViewModel(post: ApiPostSummary): ArticleCardViewModel {
@@ -95,7 +194,7 @@ export function toArticleCardViewModel(post: ApiPostSummary): ArticleCardViewMod
     categoryName: resolveCategoryName(post.category),
     categorySlug: resolveCategorySlug(post.category),
     tags: post.tags.map(toTagBadgeViewModel),
-    readTimeLabel: resolveReadTimeLabel(post.summary),
+    readTimeLabel: resolveReadTimeLabel(post.readingTimeMinutes),
   };
 }
 
@@ -142,7 +241,7 @@ export function toArchiveYearGroups(posts: ApiPostSummary[]): ArchiveYearGroupVi
       dateLabel: formatIsoDateLabel(post.publishedAt),
       monthDayLabel: formatMonthDayLabel(post.publishedAt),
       categoryName: resolveCategoryName(post.category),
-      readTimeLabel: resolveReadTimeLabel(post.summary),
+      readTimeLabel: resolveReadTimeLabel(post.readingTimeMinutes),
     });
 
     groups.set(year, currentItems);
@@ -163,5 +262,41 @@ export function toSidebarStatsViewModel(
     articles: totalArticles,
     categories: totalCategories,
     tags: totalTags,
+  };
+}
+
+export function toSiteProfileViewModel(siteProfile: ApiPublicSiteProfile): SiteProfileViewModel {
+  return {
+    id: siteProfile.id,
+    siteName: siteProfile.siteName,
+    heroTitle: siteProfile.heroTitle?.trim() || siteProfile.siteName,
+    heroTagline: siteProfile.heroTagline?.trim() || null,
+    authorName: siteProfile.authorName,
+    authorBio: siteProfile.authorBio?.trim() || null,
+    avatarUrl: siteProfile.avatarUrl?.trim() || null,
+    coverImageUrl: siteProfile.coverImageUrl?.trim() || null,
+    contacts: siteProfile.contacts.map((contact) => ({
+      id: contact.id,
+      type: contact.type,
+      typeLabel: resolveContactTypeLabel(contact.type),
+      label: contact.label,
+      value: contact.value,
+      href: resolveContactHref(contact),
+    })),
+  };
+}
+
+export function toAboutPageViewModel(page: ApiPublicPage): AboutPageViewModel {
+  const payload = isRecord(page.payload) ? page.payload : null;
+
+  return {
+    slug: page.slug,
+    title: page.title,
+    summary: page.summary?.trim() || null,
+    coverImage: page.coverImage?.trim() || null,
+    renderMode: page.renderMode,
+    contentMarkdown: page.contentMarkdown?.trim() || null,
+    sections: readAboutSections(payload?.sections),
+    skills: readStringArray(payload?.skills),
   };
 }

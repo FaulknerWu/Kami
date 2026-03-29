@@ -26,6 +26,8 @@ export interface ApiPostSummary {
   slug: string;
   summary: string;
   coverImage: string | null;
+  wordCount: number;
+  readingTimeMinutes: number;
   publishedAt: string;
   category: ApiCategory | null;
   tags: ApiTag[];
@@ -38,9 +40,50 @@ export interface ApiPostDetail {
   summary: string;
   content: string;
   coverImage: string | null;
+  wordCount: number;
+  readingTimeMinutes: number;
   publishedAt: string;
   category: ApiCategory | null;
   tags: ApiTag[];
+}
+
+export type ApiPageRenderMode = "CODED" | "MARKDOWN";
+
+export interface ApiSiteContact {
+  id: number;
+  type: string;
+  label: string;
+  value: string | null;
+  url: string | null;
+  sortOrder: number;
+  isPublic: boolean;
+}
+
+export interface ApiPublicSiteProfile {
+  id: number;
+  siteName: string;
+  heroTitle: string | null;
+  heroTagline: string | null;
+  authorName: string;
+  authorBio: string | null;
+  avatarUrl: string | null;
+  coverImageUrl: string | null;
+  canonicalBaseUrl: string | null;
+  defaultShareImageUrl: string | null;
+  contacts: ApiSiteContact[];
+}
+
+export interface ApiPublicPage<TPayload = unknown> {
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImage: string | null;
+  renderMode: ApiPageRenderMode;
+  contentMarkdown: string | null;
+  payload: TPayload | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  publishedAt: string;
 }
 
 export interface ApiPageResponse<T> {

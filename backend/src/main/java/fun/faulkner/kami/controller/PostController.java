@@ -78,6 +78,8 @@ public class PostController {
                 article.getSummary(),
                 article.getContent(),
                 article.getCoverImage(),
+                article.getWordCount(),
+                article.getReadingTimeMinutes(),
                 article.getPublishedAt(),
                 buildCategoryResponse(article.getCategoryId()),
                 listTagResponses(article.getId())
@@ -167,6 +169,8 @@ public class PostController {
                 article.getSlug(),
                 article.getSummary(),
                 article.getCoverImage(),
+                article.getWordCount(),
+                article.getReadingTimeMinutes(),
                 article.getPublishedAt(),
                 categoryResponse,
                 tagResponseMap.getOrDefault(article.getId(), List.of())

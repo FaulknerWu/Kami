@@ -19,6 +19,8 @@ public class ArticleEntity {
     private String coverImage;
     private ArticleStatus status;
     private Long categoryId;
+    private Integer wordCount;
+    private Integer readingTimeMinutes;
     private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -101,6 +103,22 @@ public class ArticleEntity {
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public Integer getWordCount() {
+        return wordCount;
+    }
+
+    public void setWordCount(Integer wordCount) {
+        this.wordCount = wordCount;
+    }
+
+    public Integer getReadingTimeMinutes() {
+        return readingTimeMinutes;
+    }
+
+    public void setReadingTimeMinutes(Integer readingTimeMinutes) {
+        this.readingTimeMinutes = readingTimeMinutes;
     }
 
     public LocalDateTime getCreatedAt() {

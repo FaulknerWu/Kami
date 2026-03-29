@@ -9,6 +9,8 @@ public record PostSummaryResponse(
         String slug,
         String summary,
         String coverImage,
+        Integer wordCount,
+        Integer readingTimeMinutes,
         LocalDateTime publishedAt,
         CategoryResponse category,
         List<TagResponse> tags

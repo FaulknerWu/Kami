@@ -1,8 +1,10 @@
 import type {
   ApiPageResponse,
+  ApiPublicPage,
   ApiPostDetail,
   ApiPostSummary,
   ApiPublicCategory,
+  ApiPublicSiteProfile,
   ApiPublicTag,
 } from "@/lib/api/types";
 import { getJson } from "@/lib/api/http";
@@ -51,6 +53,14 @@ export async function getAllPublicPosts(filters?: Pick<PublicPostPageOptions, "c
 
 export async function getPublicPostDetail(slug: string) {
   return getJson<ApiPostDetail>(`/api/posts/${slug}`);
+}
+
+export async function getPublicSiteProfile() {
+  return getJson<ApiPublicSiteProfile>("/api/site/profile");
+}
+
+export async function getPublicPage<TPayload = unknown>(slug: string) {
+  return getJson<ApiPublicPage<TPayload>>(`/api/pages/${slug}`);
 }
 
 export async function getPublicCategories() {

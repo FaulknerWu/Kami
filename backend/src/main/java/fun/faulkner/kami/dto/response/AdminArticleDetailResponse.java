@@ -12,6 +12,8 @@ public record AdminArticleDetailResponse(
         String summary,
         String content,
         String coverImage,
+        Integer wordCount,
+        Integer readingTimeMinutes,
         ArticleStatus status,
         CategoryResponse category,
         LocalDateTime publishedAt,

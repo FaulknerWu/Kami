@@ -198,6 +198,8 @@ public class AdminArticleController {
                 article.getTitle(),
                 article.getSlug(),
                 article.getSummary(),
+                article.getWordCount(),
+                article.getReadingTimeMinutes(),
                 article.getStatus(),
                 categoryResponse,
                 tagResponseMap.getOrDefault(article.getId(), List.of())
@@ -212,6 +214,8 @@ public class AdminArticleController {
                 article.getSummary(),
                 article.getContent(),
                 article.getCoverImage(),
+                article.getWordCount(),
+                article.getReadingTimeMinutes(),
                 article.getStatus(),
                 buildCategoryResponse(article.getCategoryId()),
                 article.getPublishedAt(),

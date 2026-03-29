@@ -102,6 +102,8 @@ class ArticleServiceTest {
         assertThat(savedArticle.getCoverImage()).isEqualTo("https://example.com/cover.png");
         assertThat(savedArticle.getCategoryId()).isEqualTo(3L);
         assertThat(savedArticle.getStatus()).isEqualTo(ArticleStatus.DRAFT);
+        assertThat(savedArticle.getWordCount()).isEqualTo(1);
+        assertThat(savedArticle.getReadingTimeMinutes()).isEqualTo(1);
 
         verify(articleTagMapper).insertBatch(100L, List.of(11L, 12L));
     }
@@ -144,6 +146,8 @@ class ArticleServiceTest {
         assertThat(result.getCoverImage()).isEqualTo("https://example.com/new-cover.png");
         assertThat(result.getCategoryId()).isEqualTo(5L);
         assertThat(result.getUpdatedAt()).isNotNull();
+        assertThat(result.getWordCount()).isEqualTo(2);
+        assertThat(result.getReadingTimeMinutes()).isEqualTo(1);
 
         verify(articleMapper).updateById(existingArticle);
         verify(articleTagMapper).deleteByArticleId(200L);
@@ -163,6 +167,8 @@ class ArticleServiceTest {
         assertThat(result.getStatus()).isEqualTo(ArticleStatus.PUBLISHED);
         assertThat(result.getPublishedAt()).isNotNull();
         assertThat(result.getUpdatedAt()).isNotNull();
+        assertThat(result.getWordCount()).isZero();
+        assertThat(result.getReadingTimeMinutes()).isEqualTo(1);
         verify(articleMapper).updateById(draftArticle);
     }
 

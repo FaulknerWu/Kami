@@ -2,9 +2,11 @@ import Image from "next/image";
 import { ContentListSection } from "@/components/ContentListSection";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { InlineErrorState } from "@/components/states/InlineErrorState";
-import { toArticleCardViewModel } from "@/lib/adapters/public-content";
-import { getPublicPostPage } from "@/lib/api/public-content";
-import { mockSiteProfile } from "@/lib/mocks/site-profile";
+import {
+  toArticleCardViewModel,
+  toSiteProfileViewModel,
+} from "@/lib/adapters/public-content";
+import { getPublicPostPage, getPublicSiteProfile } from "@/lib/api/public-content";
 import { buildPageHref, parsePageParam } from "@/lib/query";
 
 const HOME_PAGE_SIZE = 5;
@@ -17,28 +19,30 @@ export default async function Home(props: PageProps<"/">) {
     page: currentPage,
     size: HOME_PAGE_SIZE,
   }).catch(() => null);
+  const siteProfile = await getPublicSiteProfile()
+    .then(toSiteProfileViewModel)
+    .catch(() => null);
 
   return (
     <main className="w-full">
-      <section
-        className="relative mb-16 h-[60vh] min-h-[400px] w-full md:mb-24"
-        data-kami-mock-source="adr-0004-site-profile"
-      >
-        <Image
-          src={mockSiteProfile.cover}
-          alt="Blog Cover"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
+      <section className="relative mb-16 h-[60vh] min-h-[400px] w-full overflow-hidden bg-zinc-200 md:mb-24">
+        {siteProfile?.coverImageUrl ? (
+          <Image
+            src={siteProfile.coverImageUrl}
+            alt={siteProfile.siteName}
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
           <h1 className="text-4xl font-extrabold tracking-tighter text-white drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl">
-            {mockSiteProfile.heroTitle}
+            {siteProfile?.heroTitle ?? "站点资料暂时不可用"}
           </h1>
           <p className="mt-6 max-w-2xl text-lg font-medium leading-relaxed text-white/90 drop-shadow-md sm:text-xl">
-            {mockSiteProfile.heroTagline}
+            {siteProfile?.heroTagline ?? "请确认后端服务已启动，并已完成站点资料初始化。"}
           </p>
         </div>
       </section>

@@ -10,6 +10,8 @@ public record PostDetailResponse(
         String summary,
         String content,
         String coverImage,
+        Integer wordCount,
+        Integer readingTimeMinutes,
         LocalDateTime publishedAt,
         CategoryResponse category,
         List<TagResponse> tags

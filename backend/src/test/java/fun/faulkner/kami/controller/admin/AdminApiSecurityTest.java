@@ -7,6 +7,9 @@ import fun.faulkner.kami.service.AdminAuthService;
 import fun.faulkner.kami.service.ArticleService;
 import fun.faulkner.kami.service.CategoryService;
 import fun.faulkner.kami.service.JwtTokenService;
+import fun.faulkner.kami.service.PageService;
+import fun.faulkner.kami.service.SiteContactService;
+import fun.faulkner.kami.service.SiteProfileService;
 import fun.faulkner.kami.service.TagService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +46,15 @@ class AdminApiSecurityTest {
 
     @MockitoBean
     private TagService tagService;
+
+    @MockitoBean
+    private PageService pageService;
+
+    @MockitoBean
+    private SiteProfileService siteProfileService;
+
+    @MockitoBean
+    private SiteContactService siteContactService;
 
     @MockitoBean
     private AdminAuthService adminAuthService;

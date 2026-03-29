@@ -75,6 +75,8 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.items[0].category.slug").value("backend"))
                 .andExpect(jsonPath("$.items[0].tags[0].slug").value("java"))
                 .andExpect(jsonPath("$.items[0].tags[1].slug").value("spring"))
+                .andExpect(jsonPath("$.items[0].wordCount").value(321))
+                .andExpect(jsonPath("$.items[0].readingTimeMinutes").value(2))
                 .andExpect(jsonPath("$.total").value(1));
     }
 
@@ -92,7 +94,9 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.slug").value("java-25"))
                 .andExpect(jsonPath("$.category.slug").value("java"))
-                .andExpect(jsonPath("$.tags[0].slug").value("lts"));
+                .andExpect(jsonPath("$.tags[0].slug").value("lts"))
+                .andExpect(jsonPath("$.wordCount").value(321))
+                .andExpect(jsonPath("$.readingTimeMinutes").value(2));
     }
 
     private ArticleEntity createArticle(Long id, String slug, Long categoryId) {
@@ -104,6 +108,8 @@ class PostControllerTest {
         article.setContent("content");
         article.setStatus(ArticleStatus.PUBLISHED);
         article.setCategoryId(categoryId);
+        article.setWordCount(321);
+        article.setReadingTimeMinutes(2);
         article.setPublishedAt(LocalDateTime.of(2026, 3, 28, 12, 0));
         return article;
     }

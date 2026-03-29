@@ -115,6 +115,7 @@ public class ArticleService {
         article.setCreatedAt(now);
         article.setUpdatedAt(now);
         article.setStatus(ArticleStatus.DRAFT);
+        applyReadMetrics(article);
 
         validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.insert(article);
@@ -135,6 +136,7 @@ public class ArticleService {
         article.setCoverImage(request.coverImage());
         article.setCategoryId(request.categoryId());
         article.setUpdatedAt(LocalDateTime.now());
+        applyReadMetrics(article);
 
         validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.updateById(article);
@@ -155,6 +157,7 @@ public class ArticleService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        applyReadMetrics(article);
         article.setStatus(ArticleStatus.PUBLISHED);
         article.setPublishedAt(now);
         article.setUpdatedAt(now);
@@ -255,6 +258,12 @@ public class ArticleService {
         LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
         tagQuery.eq(TagEntity::getSlug, slug);
         return tagMapper.selectOne(tagQuery);
+    }
+
+    private void applyReadMetrics(ArticleEntity article) {
+        ArticleReadMetrics metrics = ArticleReadMetricsCalculator.calculate(article.getContent());
+        article.setWordCount(metrics.wordCount());
+        article.setReadingTimeMinutes(metrics.readingTimeMinutes());
     }
 
     private Page<ArticleEntity> emptyArticlePage(long page, long size) {
