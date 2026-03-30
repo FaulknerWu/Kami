@@ -29,6 +29,15 @@ public class SiteProfileService {
 
     public SiteProfileEntity updateSiteProfile(UpdateSiteProfileRequest request) {
         SiteProfileEntity siteProfile = getSiteProfile();
+        LocalDateTime now = LocalDateTime.now();
+        applyEditableFields(siteProfile, request);
+        siteProfile.setUpdatedAt(now);
+
+        siteProfileMapper.updateById(siteProfile);
+        return siteProfile;
+    }
+
+    private void applyEditableFields(SiteProfileEntity siteProfile, UpdateSiteProfileRequest request) {
         siteProfile.setSiteName(request.siteName());
         siteProfile.setHeroTitle(request.heroTitle());
         siteProfile.setHeroTagline(request.heroTagline());
@@ -38,9 +47,5 @@ public class SiteProfileService {
         siteProfile.setCoverImageUrl(request.coverImageUrl());
         siteProfile.setCanonicalBaseUrl(request.canonicalBaseUrl());
         siteProfile.setDefaultShareImageUrl(request.defaultShareImageUrl());
-        siteProfile.setUpdatedAt(LocalDateTime.now());
-
-        siteProfileMapper.updateById(siteProfile);
-        return siteProfile;
     }
 }

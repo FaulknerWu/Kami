@@ -18,8 +18,8 @@ public interface CategoryMapper extends BaseMapper<CategoryEntity> {
             LEFT JOIN article a
                 ON a.category_id = c.id
                 AND a.status = 'PUBLISHED'
-            GROUP BY c.id
-            ORDER BY c.sort_order ASC, c.id ASC
+            GROUP BY c.id, c.sort_order
+            ORDER BY c.sort_order, c.id
             """)
     List<CategoryArticleCount> countPublishedArticlesByCategory();
 }

@@ -40,7 +40,7 @@ public class AdminSiteController {
 
     @GetMapping("/contacts")
     public List<SiteContactResponse> listContacts() {
-        return siteContactService.listAllContacts().stream()
+        return siteContactService.listContacts().stream()
                 .map(this::toSiteContactResponse)
                 .toList();
     }

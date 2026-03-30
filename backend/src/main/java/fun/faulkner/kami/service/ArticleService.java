@@ -39,44 +39,44 @@ public class ArticleService {
     public Page<ArticleEntity> listArticles(long page, long size) {
         Page<ArticleEntity> pageRequest = new Page<>(page, size);
 
-        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByDesc(ArticleEntity::getUpdatedAt);
+        LambdaQueryWrapper<ArticleEntity> query = new LambdaQueryWrapper<>();
+        query.orderByDesc(ArticleEntity::getUpdatedAt);
 
-        return articleMapper.selectPage(pageRequest, queryWrapper);
+        return articleMapper.selectPage(pageRequest, query);
     }
 
     public Page<ArticleEntity> listPublishedArticles(long page, long size, String categorySlug, String tagSlug) {
         Page<ArticleEntity> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<ArticleEntity> query = new LambdaQueryWrapper<>();
 
-        queryWrapper.eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED);
+        query.eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED);
 
         if (categorySlug != null && !categorySlug.isBlank()) {
             CategoryEntity category = findCategoryBySlug(categorySlug);
             if (category == null) {
-                return emptyArticlePage(page, size);
+                return createEmptyArticlePage(page, size);
             }
-            queryWrapper.eq(ArticleEntity::getCategoryId, category.getId());
+            query.eq(ArticleEntity::getCategoryId, category.getId());
         }
 
         if (tagSlug != null && !tagSlug.isBlank()) {
             TagEntity tag = findTagBySlug(tagSlug);
             if (tag == null) {
-                return emptyArticlePage(page, size);
+                return createEmptyArticlePage(page, size);
             }
 
             List<Long> articleIds = articleTagMapper.selectArticleIdsByTagId(tag.getId());
             if (articleIds.isEmpty()) {
-                return emptyArticlePage(page, size);
+                return createEmptyArticlePage(page, size);
             }
 
-            queryWrapper.in(ArticleEntity::getId, articleIds);
+            query.in(ArticleEntity::getId, articleIds);
         }
 
-        queryWrapper.orderByDesc(ArticleEntity::getPublishedAt)
+        query.orderByDesc(ArticleEntity::getPublishedAt)
                 .orderByDesc(ArticleEntity::getId);
 
-        return articleMapper.selectPage(pageRequest, queryWrapper);
+        return articleMapper.selectPage(pageRequest, query);
     }
 
     public ArticleEntity getArticleById(Long id) {
@@ -88,11 +88,11 @@ public class ArticleService {
     }
 
     public ArticleEntity getPublishedArticleBySlug(String slug) {
-        LambdaQueryWrapper<ArticleEntity> articleQuery = new LambdaQueryWrapper<>();
-        articleQuery.eq(ArticleEntity::getSlug, slug)
+        LambdaQueryWrapper<ArticleEntity> query = new LambdaQueryWrapper<>();
+        query.eq(ArticleEntity::getSlug, slug)
                 .eq(ArticleEntity::getStatus, ArticleStatus.PUBLISHED);
 
-        ArticleEntity article = articleMapper.selectOne(articleQuery);
+        ArticleEntity article = articleMapper.selectOne(query);
         if (article == null) {
             throw new ResourceNotFoundException("Published article not found, slug=" + slug);
         }
@@ -100,24 +100,46 @@ public class ArticleService {
         return article;
     }
 
+    public List<TagEntity> getArticleTags(Long articleId) {
+        List<Long> tagIds = articleTagMapper.selectTagIdsByArticleId(articleId);
+        if (tagIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<TagEntity> tags = tagMapper.selectByIds(tagIds);
+        Map<Long, TagEntity> tagById = new HashMap<>();
+
+        for (TagEntity tag : tags) {
+            tagById.put(tag.getId(), tag);
+        }
+
+        return tagIds.stream()
+                .map(tagById::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
     @Transactional
     public ArticleEntity createArticle(CreateArticleRequest request) {
         ensureArticleSlugAvailable(request.slug(), null);
+        validateCategoryAndTags(request.categoryId(), request.tagIds());
 
         ArticleEntity article = new ArticleEntity();
         LocalDateTime now = LocalDateTime.now();
-        article.setTitle(request.title());
-        article.setSlug(request.slug());
-        article.setSummary(request.summary());
-        article.setContent(request.content());
-        article.setCoverImage(request.coverImage());
-        article.setCategoryId(request.categoryId());
+        applyEditableFields(
+                article,
+                request.title(),
+                request.slug(),
+                request.summary(),
+                request.content(),
+                request.coverImage(),
+                request.categoryId()
+        );
         article.setCreatedAt(now);
         article.setUpdatedAt(now);
         article.setStatus(ArticleStatus.DRAFT);
         applyReadMetrics(article);
 
-        validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.insert(article);
         insertArticleTags(article.getId(), request.tagIds());
 
@@ -128,25 +150,29 @@ public class ArticleService {
     public ArticleEntity updateArticle(Long id, UpdateArticleRequest request) {
         ArticleEntity article = getArticleById(id);
         ensureArticleSlugAvailable(request.slug(), id);
+        validateCategoryAndTags(request.categoryId(), request.tagIds());
 
-        article.setTitle(request.title());
-        article.setSlug(request.slug());
-        article.setSummary(request.summary());
-        article.setContent(request.content());
-        article.setCoverImage(request.coverImage());
-        article.setCategoryId(request.categoryId());
-        article.setUpdatedAt(LocalDateTime.now());
+        applyEditableFields(
+                article,
+                request.title(),
+                request.slug(),
+                request.summary(),
+                request.content(),
+                request.coverImage(),
+                request.categoryId()
+        );
+        LocalDateTime now = LocalDateTime.now();
+        article.setUpdatedAt(now);
         applyReadMetrics(article);
 
-        validateCategoryAndTags(request.categoryId(), request.tagIds());
         articleMapper.updateById(article);
         replaceArticleTags(article.getId(), request.tagIds());
         return article;
     }
 
     public void deleteArticle(Long id) {
-        ArticleEntity article = getArticleById(id);
-        articleMapper.deleteById(article.getId());
+        getArticleById(id);
+        articleMapper.deleteById(id);
     }
 
     public ArticleEntity publishArticle(Long id) {
@@ -182,23 +208,27 @@ public class ArticleService {
         return article;
     }
 
-    public List<TagEntity> getArticleTags(Long articleId) {
-        List<Long> tagIds = articleTagMapper.selectTagIdsByArticleId(articleId);
-        if (tagIds.isEmpty()) {
-            return List.of();
-        }
+    private void applyEditableFields(
+            ArticleEntity article,
+            String title,
+            String slug,
+            String summary,
+            String content,
+            String coverImage,
+            Long categoryId
+    ) {
+        article.setTitle(title);
+        article.setSlug(slug);
+        article.setSummary(summary);
+        article.setContent(content);
+        article.setCoverImage(coverImage);
+        article.setCategoryId(categoryId);
+    }
 
-        List<TagEntity> tags = tagMapper.selectByIds(tagIds);
-        Map<Long, TagEntity> tagMap = new HashMap<>();
-
-        for (TagEntity tag : tags) {
-            tagMap.put(tag.getId(), tag);
-        }
-
-        return tagIds.stream()
-                .map(tagMap::get)
-                .filter(Objects::nonNull)
-                .toList();
+    private void applyReadMetrics(ArticleEntity article) {
+        ArticleReadMetrics metrics = ArticleReadMetricsCalculator.calculate(article.getContent());
+        article.setWordCount(metrics.wordCount());
+        article.setReadingTimeMinutes(metrics.readingTimeMinutes());
     }
 
     private void insertArticleTags(Long articleId, List<Long> tagIds) {
@@ -223,14 +253,14 @@ public class ArticleService {
         if (tagIds.isEmpty()) {
             return;
         }
-        List<Long> uniqueTagIds = tagIds.stream().distinct().toList();
 
-        if (tagIds.size() != uniqueTagIds.size()) {
+        List<Long> distinctTagIds = tagIds.stream().distinct().toList();
+        if (tagIds.size() != distinctTagIds.size()) {
             throw new IllegalArgumentException("Tag ids contain duplicates");
         }
 
-        List<TagEntity> tags = tagMapper.selectByIds(uniqueTagIds);
-        if (tags.size() != tagIds.size()) {
+        List<TagEntity> tags = tagMapper.selectByIds(distinctTagIds);
+        if (tags.size() != distinctTagIds.size()) {
             throw new IllegalArgumentException("Some tags do not exist");
         }
     }
@@ -243,30 +273,24 @@ public class ArticleService {
     }
 
     private ArticleEntity findArticleBySlug(String slug) {
-        LambdaQueryWrapper<ArticleEntity> articleQuery = new LambdaQueryWrapper<>();
-        articleQuery.eq(ArticleEntity::getSlug, slug);
-        return articleMapper.selectOne(articleQuery);
+        LambdaQueryWrapper<ArticleEntity> query = new LambdaQueryWrapper<>();
+        query.eq(ArticleEntity::getSlug, slug);
+        return articleMapper.selectOne(query);
     }
 
     private CategoryEntity findCategoryBySlug(String slug) {
-        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
-        categoryQuery.eq(CategoryEntity::getSlug, slug);
-        return categoryMapper.selectOne(categoryQuery);
+        LambdaQueryWrapper<CategoryEntity> query = new LambdaQueryWrapper<>();
+        query.eq(CategoryEntity::getSlug, slug);
+        return categoryMapper.selectOne(query);
     }
 
     private TagEntity findTagBySlug(String slug) {
-        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
-        tagQuery.eq(TagEntity::getSlug, slug);
-        return tagMapper.selectOne(tagQuery);
+        LambdaQueryWrapper<TagEntity> query = new LambdaQueryWrapper<>();
+        query.eq(TagEntity::getSlug, slug);
+        return tagMapper.selectOne(query);
     }
 
-    private void applyReadMetrics(ArticleEntity article) {
-        ArticleReadMetrics metrics = ArticleReadMetricsCalculator.calculate(article.getContent());
-        article.setWordCount(metrics.wordCount());
-        article.setReadingTimeMinutes(metrics.readingTimeMinutes());
-    }
-
-    private Page<ArticleEntity> emptyArticlePage(long page, long size) {
+    private Page<ArticleEntity> createEmptyArticlePage(long page, long size) {
         Page<ArticleEntity> pageResult = new Page<>(page, size);
         pageResult.setRecords(List.of());
         pageResult.setTotal(0L);

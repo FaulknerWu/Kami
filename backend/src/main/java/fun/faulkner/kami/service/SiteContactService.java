@@ -18,21 +18,15 @@ public class SiteContactService {
         this.siteContactMapper = siteContactMapper;
     }
 
-    public List<SiteContactEntity> listPublicContacts() {
-        LambdaQueryWrapper<SiteContactEntity> contactQuery = new LambdaQueryWrapper<>();
-        contactQuery.eq(SiteContactEntity::getIsPublic, true)
-                .orderByAsc(SiteContactEntity::getSortOrder)
-                .orderByAsc(SiteContactEntity::getId);
-
-        return siteContactMapper.selectList(contactQuery);
+    public List<SiteContactEntity> listContacts() {
+        return siteContactMapper.selectList(createOrderedContactQuery());
     }
 
-    public List<SiteContactEntity> listAllContacts() {
-        LambdaQueryWrapper<SiteContactEntity> contactQuery = new LambdaQueryWrapper<>();
-        contactQuery.orderByAsc(SiteContactEntity::getSortOrder)
-                .orderByAsc(SiteContactEntity::getId);
+    public List<SiteContactEntity> listPublicContacts() {
+        LambdaQueryWrapper<SiteContactEntity> query = createOrderedContactQuery();
+        query.eq(SiteContactEntity::getIsPublic, true);
 
-        return siteContactMapper.selectList(contactQuery);
+        return siteContactMapper.selectList(query);
     }
 
     @Transactional
@@ -45,18 +39,29 @@ public class SiteContactService {
 
         LocalDateTime now = LocalDateTime.now();
         for (SiteContactItemRequest contactRequest : contacts) {
-            SiteContactEntity contact = new SiteContactEntity();
-            contact.setType(contactRequest.type());
-            contact.setLabel(contactRequest.label());
-            contact.setValue(contactRequest.value());
-            contact.setUrl(contactRequest.url());
-            contact.setSortOrder(contactRequest.sortOrder());
-            contact.setIsPublic(contactRequest.isPublic());
-            contact.setCreatedAt(now);
-            contact.setUpdatedAt(now);
-            siteContactMapper.insert(contact);
+            siteContactMapper.insert(createContactEntity(contactRequest, now));
         }
 
-        return listAllContacts();
+        return listContacts();
+    }
+
+    private LambdaQueryWrapper<SiteContactEntity> createOrderedContactQuery() {
+        LambdaQueryWrapper<SiteContactEntity> query = new LambdaQueryWrapper<>();
+        query.orderByAsc(SiteContactEntity::getSortOrder)
+                .orderByAsc(SiteContactEntity::getId);
+        return query;
+    }
+
+    private SiteContactEntity createContactEntity(SiteContactItemRequest request, LocalDateTime now) {
+        SiteContactEntity contact = new SiteContactEntity();
+        contact.setType(request.type());
+        contact.setLabel(request.label());
+        contact.setValue(request.value());
+        contact.setUrl(request.url());
+        contact.setSortOrder(request.sortOrder());
+        contact.setIsPublic(request.isPublic());
+        contact.setCreatedAt(now);
+        contact.setUpdatedAt(now);
+        return contact;
     }
 }

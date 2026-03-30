@@ -27,9 +27,9 @@ public class TagService {
     }
 
     public List<TagEntity> listTags() {
-        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
-        tagQuery.orderByAsc(TagEntity::getName);
-        return tagMapper.selectList(tagQuery);
+        LambdaQueryWrapper<TagEntity> query = new LambdaQueryWrapper<>();
+        query.orderByAsc(TagEntity::getName);
+        return tagMapper.selectList(query);
     }
 
     public List<TagEntity> listTagsByIds(List<Long> ids) {
@@ -41,17 +41,17 @@ public class TagService {
     }
 
     public Map<Long, Long> countPublishedArticlesByTag() {
-        List<TagArticleCount> counts = tagMapper.countPublishedArticlesByTag();
-        if (counts.isEmpty()) {
+        List<TagArticleCount> tagArticleCounts = tagMapper.countPublishedArticlesByTag();
+        if (tagArticleCounts.isEmpty()) {
             return Map.of();
         }
 
-        Map<Long, Long> articleCountMap = new HashMap<>();
-        for (TagArticleCount count : counts) {
-            articleCountMap.put(count.tagId(), count.articleCount());
+        Map<Long, Long> articleCountByTagId = new HashMap<>();
+        for (TagArticleCount tagArticleCount : tagArticleCounts) {
+            articleCountByTagId.put(tagArticleCount.tagId(), tagArticleCount.articleCount());
         }
 
-        return articleCountMap;
+        return articleCountByTagId;
     }
 
     public TagEntity getTagById(Long id) {
@@ -79,23 +79,21 @@ public class TagService {
 
         List<TagEntity> tags = tagMapper.selectByIds(tagIds);
 
-        Map<Long, TagEntity> tagMap = new HashMap<>();
+        Map<Long, TagEntity> tagById = new HashMap<>();
         for (TagEntity tag : tags) {
-            tagMap.put(tag.getId(), tag);
+            tagById.put(tag.getId(), tag);
         }
 
         Map<Long, List<TagEntity>> tagsByArticleId = new HashMap<>();
         for (ArticleTagRelation relation : relations) {
             Long articleId = relation.articleId();
-            Long tagId = relation.tagId();
-
-            TagEntity tag = tagMap.get(tagId);
+            TagEntity tag = tagById.get(relation.tagId());
             if (tag == null) {
                 continue;
             }
 
             tagsByArticleId
-                    .computeIfAbsent(articleId, _ -> new ArrayList<>())
+                    .computeIfAbsent(articleId, ignored -> new ArrayList<>())
                     .add(tag);
         }
 
@@ -107,8 +105,7 @@ public class TagService {
         ensureTagNameAvailable(request.name(), null);
 
         TagEntity tag = new TagEntity();
-        tag.setName(request.name());
-        tag.setSlug(request.slug());
+        applyEditableFields(tag, request.name(), request.slug());
 
         tagMapper.insert(tag);
         return tag;
@@ -119,16 +116,20 @@ public class TagService {
         ensureTagSlugAvailable(request.slug(), id);
         ensureTagNameAvailable(request.name(), id);
 
-        tag.setName(request.name());
-        tag.setSlug(request.slug());
+        applyEditableFields(tag, request.name(), request.slug());
 
         tagMapper.updateById(tag);
         return tag;
     }
 
     public void deleteTag(Long id) {
-        TagEntity tag = getTagById(id);
-        tagMapper.deleteById(tag.getId());
+        getTagById(id);
+        tagMapper.deleteById(id);
+    }
+
+    private void applyEditableFields(TagEntity tag, String name, String slug) {
+        tag.setName(name);
+        tag.setSlug(slug);
     }
 
     private void ensureTagSlugAvailable(String slug, Long excludedTagId) {
@@ -146,14 +147,14 @@ public class TagService {
     }
 
     private TagEntity findTagBySlug(String slug) {
-        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
-        tagQuery.eq(TagEntity::getSlug, slug);
-        return tagMapper.selectOne(tagQuery);
+        LambdaQueryWrapper<TagEntity> query = new LambdaQueryWrapper<>();
+        query.eq(TagEntity::getSlug, slug);
+        return tagMapper.selectOne(query);
     }
 
     private TagEntity findTagByName(String name) {
-        LambdaQueryWrapper<TagEntity> tagQuery = new LambdaQueryWrapper<>();
-        tagQuery.eq(TagEntity::getName, name);
-        return tagMapper.selectOne(tagQuery);
+        LambdaQueryWrapper<TagEntity> query = new LambdaQueryWrapper<>();
+        query.eq(TagEntity::getName, name);
+        return tagMapper.selectOne(query);
     }
 }

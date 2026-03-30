@@ -87,7 +87,7 @@ public class PostController {
     }
 
     private Map<Long, CategoryResponse> buildCategoryResponseMap(List<ArticleEntity> articles) {
-        if (articles == null || articles.isEmpty()) {
+        if (hasNoArticles(articles)) {
             return Map.of();
         }
 
@@ -112,7 +112,7 @@ public class PostController {
     }
 
     private Map<Long, List<TagResponse>> buildTagResponseMap(List<ArticleEntity> articles) {
-        if (articles == null || articles.isEmpty()) {
+        if (hasNoArticles(articles)) {
             return Map.of();
         }
 
@@ -134,6 +134,10 @@ public class PostController {
         }
 
         return tagResponseMap;
+    }
+
+    private boolean hasNoArticles(List<ArticleEntity> articles) {
+        return articles == null || articles.isEmpty();
     }
 
     private CategoryResponse buildCategoryResponse(Long categoryId) {

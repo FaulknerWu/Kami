@@ -21,19 +21,11 @@ public class CategoryService {
         this.categoryMapper = categoryMapper;
     }
 
-    public CategoryEntity getCategoryById(Long id) {
-        CategoryEntity category = categoryMapper.selectById(id);
-        if (category == null) {
-            throw new ResourceNotFoundException("Category not found, id=" + id);
-        }
-        return category;
-    }
-
     public List<CategoryEntity> listCategories() {
-        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
-        categoryQuery.orderByAsc(CategoryEntity::getSortOrder);
+        LambdaQueryWrapper<CategoryEntity> query = new LambdaQueryWrapper<>();
+        query.orderByAsc(CategoryEntity::getSortOrder);
 
-        return categoryMapper.selectList(categoryQuery);
+        return categoryMapper.selectList(query);
     }
 
     public List<CategoryEntity> listCategoriesByIds(List<Long> ids) {
@@ -45,17 +37,25 @@ public class CategoryService {
     }
 
     public Map<Long, Long> countPublishedArticlesByCategory() {
-        List<CategoryArticleCount> counts = categoryMapper.countPublishedArticlesByCategory();
-        if (counts.isEmpty()) {
+        List<CategoryArticleCount> categoryArticleCounts = categoryMapper.countPublishedArticlesByCategory();
+        if (categoryArticleCounts.isEmpty()) {
             return Map.of();
         }
 
-        Map<Long, Long> articleCountMap = new HashMap<>();
-        for (CategoryArticleCount count : counts) {
-            articleCountMap.put(count.categoryId(), count.articleCount());
+        Map<Long, Long> articleCountByCategoryId = new HashMap<>();
+        for (CategoryArticleCount categoryArticleCount : categoryArticleCounts) {
+            articleCountByCategoryId.put(categoryArticleCount.categoryId(), categoryArticleCount.articleCount());
         }
 
-        return articleCountMap;
+        return articleCountByCategoryId;
+    }
+
+    public CategoryEntity getCategoryById(Long id) {
+        CategoryEntity category = categoryMapper.selectById(id);
+        if (category == null) {
+            throw new ResourceNotFoundException("Category not found, id=" + id);
+        }
+        return category;
     }
 
     public CategoryEntity createCategory(CreateCategoryRequest request) {
@@ -63,10 +63,13 @@ public class CategoryService {
         ensureCategoryNameAvailable(request.name(), null);
 
         CategoryEntity category = new CategoryEntity();
-        category.setName(request.name());
-        category.setSlug(request.slug());
-        category.setDescription(request.description());
-        category.setSortOrder(request.sortOrder());
+        applyEditableFields(
+                category,
+                request.name(),
+                request.slug(),
+                request.description(),
+                request.sortOrder()
+        );
 
         categoryMapper.insert(category);
         return category;
@@ -77,19 +80,34 @@ public class CategoryService {
         ensureCategorySlugAvailable(request.slug(), id);
         ensureCategoryNameAvailable(request.name(), id);
 
-        category.setName(request.name());
-        category.setSlug(request.slug());
-        category.setDescription(request.description());
-        category.setSortOrder(request.sortOrder());
+        applyEditableFields(
+                category,
+                request.name(),
+                request.slug(),
+                request.description(),
+                request.sortOrder()
+        );
 
         categoryMapper.updateById(category);
-
         return category;
     }
 
     public void deleteCategory(Long id) {
-        CategoryEntity category = getCategoryById(id);
-        categoryMapper.deleteById(category.getId());
+        getCategoryById(id);
+        categoryMapper.deleteById(id);
+    }
+
+    private void applyEditableFields(
+            CategoryEntity category,
+            String name,
+            String slug,
+            String description,
+            Integer sortOrder
+    ) {
+        category.setName(name);
+        category.setSlug(slug);
+        category.setDescription(description);
+        category.setSortOrder(sortOrder);
     }
 
     private void ensureCategorySlugAvailable(String slug, Long excludedCategoryId) {
@@ -107,14 +125,14 @@ public class CategoryService {
     }
 
     private CategoryEntity findCategoryBySlug(String slug) {
-        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
-        categoryQuery.eq(CategoryEntity::getSlug, slug);
-        return categoryMapper.selectOne(categoryQuery);
+        LambdaQueryWrapper<CategoryEntity> query = new LambdaQueryWrapper<>();
+        query.eq(CategoryEntity::getSlug, slug);
+        return categoryMapper.selectOne(query);
     }
 
     private CategoryEntity findCategoryByName(String name) {
-        LambdaQueryWrapper<CategoryEntity> categoryQuery = new LambdaQueryWrapper<>();
-        categoryQuery.eq(CategoryEntity::getName, name);
-        return categoryMapper.selectOne(categoryQuery);
+        LambdaQueryWrapper<CategoryEntity> query = new LambdaQueryWrapper<>();
+        query.eq(CategoryEntity::getName, name);
+        return categoryMapper.selectOne(query);
     }
 }

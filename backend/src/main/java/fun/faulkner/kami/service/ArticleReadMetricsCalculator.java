@@ -4,11 +4,11 @@ import java.text.BreakIterator;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-public final class ArticleReadMetricsCalculator {
+final class ArticleReadMetricsCalculator {
     private static final Pattern FENCED_CODE_BLOCK_PATTERN = Pattern.compile("```[\\s\\S]*?```");
     private static final Pattern INLINE_CODE_PATTERN = Pattern.compile("`[^`]*`");
-    private static final Pattern IMAGE_PATTERN = Pattern.compile("!\\[[^\\]]*]\\([^)]*\\)");
-    private static final Pattern LINK_PATTERN = Pattern.compile("\\[([^\\]]*)]\\([^)]*\\)");
+    private static final Pattern IMAGE_PATTERN = Pattern.compile("!\\[[^]]*]\\([^)]*\\)");
+    private static final Pattern LINK_PATTERN = Pattern.compile("\\[([^]]*)]\\([^)]*\\)");
     private static final Pattern MARKDOWN_SYMBOL_PATTERN = Pattern.compile("[#>*_\\-]+");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
     private static final int WORDS_PER_MINUTE = 250;
@@ -16,7 +16,7 @@ public final class ArticleReadMetricsCalculator {
     private ArticleReadMetricsCalculator() {
     }
 
-    public static ArticleReadMetrics calculate(String markdownContent) {
+    static ArticleReadMetrics calculate(String markdownContent) {
         String normalizedText = normalizeMarkdown(markdownContent);
         int wordCount = countWords(normalizedText);
         int readingTimeMinutes = Math.max(1, (int) Math.ceil(wordCount / (double) WORDS_PER_MINUTE));

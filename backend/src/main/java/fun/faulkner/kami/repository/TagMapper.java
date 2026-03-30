@@ -21,8 +21,8 @@ public interface TagMapper extends BaseMapper<TagEntity>
             LEFT JOIN article a
                 ON a.id = at.article_id
                 AND a.status = 'PUBLISHED'
-            GROUP BY t.id
-            ORDER BY t.name ASC, t.id ASC
+            GROUP BY t.id, t.name
+            ORDER BY t.name, t.id
             """)
     List<TagArticleCount> countPublishedArticlesByTag();
 }

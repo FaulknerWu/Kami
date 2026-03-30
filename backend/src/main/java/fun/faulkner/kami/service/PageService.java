@@ -24,10 +24,10 @@ public class PageService {
 
     public Page<PageEntity> listPages(long page, long size) {
         Page<PageEntity> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<PageEntity> pageQuery = new LambdaQueryWrapper<>();
-        pageQuery.orderByDesc(PageEntity::getUpdatedAt)
+        LambdaQueryWrapper<PageEntity> query = new LambdaQueryWrapper<>();
+        query.orderByDesc(PageEntity::getUpdatedAt)
                 .orderByDesc(PageEntity::getId);
-        return pageMapper.selectPage(pageRequest, pageQuery);
+        return pageMapper.selectPage(pageRequest, query);
     }
 
     public PageEntity getPageById(Long id) {
@@ -40,11 +40,11 @@ public class PageService {
     }
 
     public PageEntity getPublishedPageBySlug(String slug) {
-        LambdaQueryWrapper<PageEntity> pageQuery = new LambdaQueryWrapper<>();
-        pageQuery.eq(PageEntity::getSlug, slug)
+        LambdaQueryWrapper<PageEntity> query = new LambdaQueryWrapper<>();
+        query.eq(PageEntity::getSlug, slug)
                 .eq(PageEntity::getStatus, PageStatus.PUBLISHED);
 
-        PageEntity page = pageMapper.selectOne(pageQuery);
+        PageEntity page = pageMapper.selectOne(query);
         if (page == null) {
             throw new ResourceNotFoundException("Published page not found, slug=" + slug);
         }
@@ -57,17 +57,21 @@ public class PageService {
 
         PageEntity page = new PageEntity();
         LocalDateTime now = LocalDateTime.now();
-        page.setSlug(request.slug());
-        page.setTitle(request.title());
-        page.setSummary(request.summary());
-        page.setCoverImage(request.coverImage());
-        page.setRenderMode(request.renderMode());
-        page.setSeoTitle(request.seoTitle());
-        page.setSeoDescription(request.seoDescription());
+        applyEditableFields(
+                page,
+                request.slug(),
+                request.title(),
+                request.summary(),
+                request.coverImage(),
+                request.renderMode(),
+                request.seoTitle(),
+                request.seoDescription(),
+                request.contentMarkdown(),
+                request.payload()
+        );
         page.setStatus(PageStatus.DRAFT);
         page.setCreatedAt(now);
         page.setUpdatedAt(now);
-        applyRenderModeContent(page, request.contentMarkdown(), request.payload());
 
         pageMapper.insert(page);
         return page;
@@ -77,23 +81,28 @@ public class PageService {
         PageEntity page = getPageById(id);
         ensurePageSlugAvailable(request.slug(), id);
 
-        page.setSlug(request.slug());
-        page.setTitle(request.title());
-        page.setSummary(request.summary());
-        page.setCoverImage(request.coverImage());
-        page.setRenderMode(request.renderMode());
-        page.setSeoTitle(request.seoTitle());
-        page.setSeoDescription(request.seoDescription());
-        page.setUpdatedAt(LocalDateTime.now());
-        applyRenderModeContent(page, request.contentMarkdown(), request.payload());
+        applyEditableFields(
+                page,
+                request.slug(),
+                request.title(),
+                request.summary(),
+                request.coverImage(),
+                request.renderMode(),
+                request.seoTitle(),
+                request.seoDescription(),
+                request.contentMarkdown(),
+                request.payload()
+        );
+        LocalDateTime now = LocalDateTime.now();
+        page.setUpdatedAt(now);
 
         pageMapper.updateById(page);
         return page;
     }
 
     public void deletePage(Long id) {
-        PageEntity page = getPageById(id);
-        pageMapper.deleteById(page.getId());
+        getPageById(id);
+        pageMapper.deleteById(id);
     }
 
     public PageEntity publishPage(Long id) {
@@ -126,21 +135,30 @@ public class PageService {
         return page;
     }
 
-    private void ensurePageSlugAvailable(String slug, Long excludedPageId) {
-        PageEntity existingPage = findPageBySlug(slug);
-        if (existingPage != null && !existingPage.getId().equals(excludedPageId)) {
-            throw new IllegalArgumentException("Page slug already exists: " + slug);
-        }
+    private void applyEditableFields(
+            PageEntity page,
+            String slug,
+            String title,
+            String summary,
+            String coverImage,
+            PageRenderMode renderMode,
+            String seoTitle,
+            String seoDescription,
+            String contentMarkdown,
+            JsonNode payload
+    ) {
+        page.setSlug(slug);
+        page.setTitle(title);
+        page.setSummary(summary);
+        page.setCoverImage(coverImage);
+        page.setRenderMode(renderMode);
+        page.setSeoTitle(seoTitle);
+        page.setSeoDescription(seoDescription);
+        applyRenderModeContent(page, renderMode, contentMarkdown, payload);
     }
 
-    private PageEntity findPageBySlug(String slug) {
-        LambdaQueryWrapper<PageEntity> pageQuery = new LambdaQueryWrapper<>();
-        pageQuery.eq(PageEntity::getSlug, slug);
-        return pageMapper.selectOne(pageQuery);
-    }
-
-    private void applyRenderModeContent(PageEntity page, String contentMarkdown, JsonNode payload) {
-        if (page.getRenderMode() == PageRenderMode.MARKDOWN) {
+    private void applyRenderModeContent(PageEntity page, PageRenderMode renderMode, String contentMarkdown, JsonNode payload) {
+        if (renderMode == PageRenderMode.MARKDOWN) {
             if (contentMarkdown == null || contentMarkdown.isBlank()) {
                 throw new IllegalArgumentException("Markdown page content cannot be blank");
             }
@@ -152,5 +170,18 @@ public class PageService {
 
         page.setContentMarkdown(null);
         page.setPayload(payload);
+    }
+
+    private void ensurePageSlugAvailable(String slug, Long excludedPageId) {
+        PageEntity existingPage = findPageBySlug(slug);
+        if (existingPage != null && !existingPage.getId().equals(excludedPageId)) {
+            throw new IllegalArgumentException("Page slug already exists: " + slug);
+        }
+    }
+
+    private PageEntity findPageBySlug(String slug) {
+        LambdaQueryWrapper<PageEntity> query = new LambdaQueryWrapper<>();
+        query.eq(PageEntity::getSlug, slug);
+        return pageMapper.selectOne(query);
     }
 }
