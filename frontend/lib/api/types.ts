@@ -47,8 +47,6 @@ export interface ApiPostDetail {
   tags: ApiTag[];
 }
 
-export type ApiPageRenderMode = "CODED" | "MARKDOWN";
-
 export interface ApiSiteContact {
   id: number;
   type: string;
@@ -73,14 +71,12 @@ export interface ApiPublicSiteProfile {
   contacts: ApiSiteContact[];
 }
 
-export interface ApiPublicPage<TPayload = unknown> {
+export interface ApiPublicPage {
   slug: string;
   title: string;
   summary: string | null;
   coverImage: string | null;
-  renderMode: ApiPageRenderMode;
-  contentMarkdown: string | null;
-  payload: TPayload | null;
+  contentMarkdown: string;
   seoTitle: string | null;
   seoDescription: string | null;
   publishedAt: string;

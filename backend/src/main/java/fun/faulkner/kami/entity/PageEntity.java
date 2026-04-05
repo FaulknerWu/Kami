@@ -1,17 +1,13 @@
 package fun.faulkner.kami.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.databind.JsonNode;
-import fun.faulkner.kami.enums.PageRenderMode;
 import fun.faulkner.kami.enums.PageStatus;
-import fun.faulkner.kami.typehandler.JsonNodeJsonbTypeHandler;
 
 import java.time.LocalDateTime;
 
-@TableName(value = "page", autoResultMap = true)
+@TableName("page")
 public class PageEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -20,12 +16,7 @@ public class PageEntity {
     private String title;
     private String summary;
     private String coverImage;
-    private PageRenderMode renderMode;
     private String contentMarkdown;
-
-    @TableField(typeHandler = JsonNodeJsonbTypeHandler.class)
-    private JsonNode payload;
-
     private String seoTitle;
     private String seoDescription;
     private PageStatus status;
@@ -73,28 +64,12 @@ public class PageEntity {
         this.coverImage = coverImage;
     }
 
-    public PageRenderMode getRenderMode() {
-        return renderMode;
-    }
-
-    public void setRenderMode(PageRenderMode renderMode) {
-        this.renderMode = renderMode;
-    }
-
     public String getContentMarkdown() {
         return contentMarkdown;
     }
 
     public void setContentMarkdown(String contentMarkdown) {
         this.contentMarkdown = contentMarkdown;
-    }
-
-    public JsonNode getPayload() {
-        return payload;
-    }
-
-    public void setPayload(JsonNode payload) {
-        this.payload = payload;
     }
 
     public String getSeoTitle() {

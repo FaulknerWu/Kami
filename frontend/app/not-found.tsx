@@ -8,7 +8,7 @@ export default function NotFound() {
           没找到你要的内容
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600">
-          这篇文章、分类或标签可能还不存在，也可能已经被移除了。
+          这篇文章、页面、分类或标签可能还不存在，也可能已经被移除了。
         </p>
         <Link
           href="/"

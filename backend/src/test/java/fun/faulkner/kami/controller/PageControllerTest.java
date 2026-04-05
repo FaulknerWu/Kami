@@ -1,9 +1,6 @@
 package fun.faulkner.kami.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.faulkner.kami.entity.PageEntity;
-import fun.faulkner.kami.enums.PageRenderMode;
 import fun.faulkner.kami.enums.PageStatus;
 import fun.faulkner.kami.service.PageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,16 +39,11 @@ class PageControllerTest {
 
     @Test
     void getPageBySlugShouldReturnPublishedPagePayload() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
-        ObjectNode payload = objectMapper.createObjectNode();
-        payload.putArray("skills").add("React");
-
         PageEntity page = new PageEntity();
         page.setId(1L);
         page.setSlug("about");
         page.setTitle("关于我");
-        page.setRenderMode(PageRenderMode.CODED);
-        page.setPayload(payload);
+        page.setContentMarkdown("# 关于我");
         page.setStatus(PageStatus.PUBLISHED);
         page.setPublishedAt(LocalDateTime.of(2026, 3, 29, 10, 0));
 
@@ -61,6 +53,8 @@ class PageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.slug").value("about"))
-                .andExpect(jsonPath("$.renderMode").value("CODED"));
+                .andExpect(jsonPath("$.contentMarkdown").value("# 关于我"))
+                .andExpect(jsonPath("$.renderMode").doesNotExist())
+                .andExpect(jsonPath("$.payload").doesNotExist());
     }
 }

@@ -2,20 +2,27 @@ package fun.faulkner.kami.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.JsonNode;
 import fun.faulkner.kami.dto.request.CreatePageRequest;
 import fun.faulkner.kami.dto.request.UpdatePageRequest;
 import fun.faulkner.kami.entity.PageEntity;
-import fun.faulkner.kami.enums.PageRenderMode;
 import fun.faulkner.kami.enums.PageStatus;
 import fun.faulkner.kami.exception.ResourceNotFoundException;
 import fun.faulkner.kami.repository.PageMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Service
 public class PageService {
+    private static final Set<String> RESERVED_PAGE_SLUGS = Set.of(
+            "api",
+            "archive",
+            "categories",
+            "posts",
+            "tags"
+    );
+
     private final PageMapper pageMapper;
 
     public PageService(PageMapper pageMapper) {
@@ -63,11 +70,9 @@ public class PageService {
                 request.title(),
                 request.summary(),
                 request.coverImage(),
-                request.renderMode(),
                 request.seoTitle(),
                 request.seoDescription(),
-                request.contentMarkdown(),
-                request.payload()
+                request.contentMarkdown()
         );
         page.setStatus(PageStatus.DRAFT);
         page.setCreatedAt(now);
@@ -87,11 +92,9 @@ public class PageService {
                 request.title(),
                 request.summary(),
                 request.coverImage(),
-                request.renderMode(),
                 request.seoTitle(),
                 request.seoDescription(),
-                request.contentMarkdown(),
-                request.payload()
+                request.contentMarkdown()
         );
         LocalDateTime now = LocalDateTime.now();
         page.setUpdatedAt(now);
@@ -141,38 +144,32 @@ public class PageService {
             String title,
             String summary,
             String coverImage,
-            PageRenderMode renderMode,
             String seoTitle,
             String seoDescription,
-            String contentMarkdown,
-            JsonNode payload
+            String contentMarkdown
     ) {
         page.setSlug(slug);
         page.setTitle(title);
         page.setSummary(summary);
         page.setCoverImage(coverImage);
-        page.setRenderMode(renderMode);
         page.setSeoTitle(seoTitle);
         page.setSeoDescription(seoDescription);
-        applyRenderModeContent(page, renderMode, contentMarkdown, payload);
+        page.setContentMarkdown(requireMarkdownContent(contentMarkdown));
     }
 
-    private void applyRenderModeContent(PageEntity page, PageRenderMode renderMode, String contentMarkdown, JsonNode payload) {
-        if (renderMode == PageRenderMode.MARKDOWN) {
-            if (contentMarkdown == null || contentMarkdown.isBlank()) {
-                throw new IllegalArgumentException("Markdown page content cannot be blank");
-            }
-
-            page.setContentMarkdown(contentMarkdown);
-            page.setPayload(null);
-            return;
+    private String requireMarkdownContent(String contentMarkdown) {
+        if (contentMarkdown == null || contentMarkdown.isBlank()) {
+            throw new IllegalArgumentException("Markdown page content cannot be blank");
         }
 
-        page.setContentMarkdown(null);
-        page.setPayload(payload);
+        return contentMarkdown;
     }
 
     private void ensurePageSlugAvailable(String slug, Long excludedPageId) {
+        if (RESERVED_PAGE_SLUGS.contains(slug)) {
+            throw new IllegalArgumentException("Page slug is reserved: " + slug);
+        }
+
         PageEntity existingPage = findPageBySlug(slug);
         if (existingPage != null && !existingPage.getId().equals(excludedPageId)) {
             throw new IllegalArgumentException("Page slug already exists: " + slug);

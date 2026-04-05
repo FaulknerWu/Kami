@@ -87,7 +87,6 @@ public class AdminPageController {
                 page.getTitle(),
                 page.getSlug(),
                 page.getSummary(),
-                page.getRenderMode(),
                 page.getStatus(),
                 page.getPublishedAt(),
                 page.getUpdatedAt()
@@ -101,9 +100,7 @@ public class AdminPageController {
                 page.getTitle(),
                 page.getSummary(),
                 page.getCoverImage(),
-                page.getRenderMode(),
                 page.getContentMarkdown(),
-                page.getPayload(),
                 page.getSeoTitle(),
                 page.getSeoDescription(),
                 page.getStatus(),

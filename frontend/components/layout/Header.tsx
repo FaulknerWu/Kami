@@ -49,12 +49,6 @@ export function Header() {
           >
             归档
           </Link>
-          <Link
-            href="/about"
-            className={`text-sm font-medium transition-colors ${pathname === "/about" ? activeTextClasses : textClasses}`}
-          >
-            关于
-          </Link>
         </nav>
         <MockFeatureButton
           feature="search"

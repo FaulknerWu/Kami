@@ -1,5 +1,4 @@
 import type {
-  ApiPageRenderMode,
   ApiPostDetail,
   ApiPostSummary,
   ApiPublicPage,
@@ -89,20 +88,12 @@ export interface SiteProfileViewModel {
   contacts: SiteContactViewModel[];
 }
 
-export interface AboutSectionViewModel {
-  title: string;
-  paragraphs: string[];
-}
-
-export interface AboutPageViewModel {
+export interface PageViewModel {
   slug: string;
   title: string;
   summary: string | null;
   coverImage: string | null;
-  renderMode: ApiPageRenderMode;
-  contentMarkdown: string | null;
-  sections: AboutSectionViewModel[];
-  skills: string[];
+  contentMarkdown: string;
 }
 
 function toTagBadgeViewModel(tag: { id: number; name: string; slug: string }): TagBadgeViewModel {
@@ -146,42 +137,6 @@ function resolveContactTypeLabel(type: string) {
     default:
       return type;
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" ? value : null;
-}
-
-function readStringArray(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function readAboutSections(value: unknown): AboutSectionViewModel[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.flatMap((item) => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    const title = readString(item.title);
-    if (!title) {
-      return [];
-    }
-
-    return [{
-      title,
-      paragraphs: readStringArray(item.paragraphs),
-    }];
-  });
 }
 
 export function toArticleCardViewModel(post: ApiPostSummary): ArticleCardViewModel {
@@ -286,17 +241,12 @@ export function toSiteProfileViewModel(siteProfile: ApiPublicSiteProfile): SiteP
   };
 }
 
-export function toAboutPageViewModel(page: ApiPublicPage): AboutPageViewModel {
-  const payload = isRecord(page.payload) ? page.payload : null;
-
+export function toPageViewModel(page: ApiPublicPage): PageViewModel {
   return {
     slug: page.slug,
     title: page.title,
     summary: page.summary?.trim() || null,
     coverImage: page.coverImage?.trim() || null,
-    renderMode: page.renderMode,
-    contentMarkdown: page.contentMarkdown?.trim() || null,
-    sections: readAboutSections(payload?.sections),
-    skills: readStringArray(payload?.skills),
+    contentMarkdown: page.contentMarkdown,
   };
 }

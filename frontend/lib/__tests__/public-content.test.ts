@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  toAboutPageViewModel,
   toArchiveYearGroups,
   toArticleCardViewModel,
   toArticleDetailViewModel,
   toCategoryListItemViewModels,
+  toPageViewModel,
   toSiteProfileViewModel,
   toSidebarStatsViewModel,
   toTagListItemViewModels,
@@ -141,11 +141,11 @@ describe("public content adapters", () => {
   it("toSiteProfileViewModel 应该映射站点资料与联系方式", () => {
     const profile: ApiPublicSiteProfile = {
       id: 1,
-      siteName: "Felix_SANA",
-      heroTitle: "Felix_SANA 'S BLOG",
-      heroTagline: "Beyond your heart and light",
-      authorName: "Felix_SANA",
-      authorBio: "一个普普通通大学生，现在是社畜了……",
+      siteName: "My Blog",
+      heroTitle: "My Blog",
+      heroTagline: null,
+      authorName: "Author",
+      authorBio: null,
       avatarUrl: "https://example.com/avatar.jpg",
       coverImageUrl: "https://example.com/cover.jpg",
       canonicalBaseUrl: null,
@@ -165,37 +165,28 @@ describe("public content adapters", () => {
 
     const result = toSiteProfileViewModel(profile);
 
-    expect(result.heroTitle).toBe("Felix_SANA 'S BLOG");
+    expect(result.heroTitle).toBe("My Blog");
+    expect(result.heroTagline).toBeNull();
     expect(result.contacts[0].typeLabel).toBe("Email");
     expect(result.contacts[0].href).toBe("mailto:hello@example.com");
   });
 
-  it("toAboutPageViewModel 应该从 payload 中读取 about 页面结构化数据", () => {
-    const aboutPage: ApiPublicPage = {
+  it("toPageViewModel 应该映射普通 page 的 Markdown 数据", () => {
+    const page: ApiPublicPage = {
       slug: "about",
       title: "关于我",
       summary: "关于页摘要",
       coverImage: "https://example.com/about-cover.jpg",
-      renderMode: "CODED",
-      contentMarkdown: null,
-      payload: {
-        sections: [
-          {
-            title: "阴暗地爬行中",
-            paragraphs: ["第一段", "第二段"],
-          },
-        ],
-        skills: ["React", "Spring Boot"],
-      },
-      seoTitle: "关于我 - Felix_SANA",
+      contentMarkdown: "# 标题\n\n正文内容",
+      seoTitle: "关于",
       seoDescription: "关于我",
       publishedAt: "2026-03-29T12:00:00",
     };
 
-    const result = toAboutPageViewModel(aboutPage);
+    const result = toPageViewModel(page);
 
     expect(result.slug).toBe("about");
-    expect(result.sections[0]?.title).toBe("阴暗地爬行中");
-    expect(result.skills).toEqual(["React", "Spring Boot"]);
+    expect(result.coverImage).toBe("https://example.com/about-cover.jpg");
+    expect(result.contentMarkdown).toContain("正文内容");
   });
 });

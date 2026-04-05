@@ -26,9 +26,7 @@ public class PageController {
                 page.getTitle(),
                 page.getSummary(),
                 page.getCoverImage(),
-                page.getRenderMode(),
                 page.getContentMarkdown(),
-                page.getPayload(),
                 page.getSeoTitle(),
                 page.getSeoDescription(),
                 page.getPublishedAt()

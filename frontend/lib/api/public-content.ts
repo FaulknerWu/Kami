@@ -59,8 +59,8 @@ export async function getPublicSiteProfile() {
   return getJson<ApiPublicSiteProfile>("/api/site/profile");
 }
 
-export async function getPublicPage<TPayload = unknown>(slug: string) {
-  return getJson<ApiPublicPage<TPayload>>(`/api/pages/${slug}`);
+export async function getPublicPage(slug: string) {
+  return getJson<ApiPublicPage>(`/api/pages/${slug}`);
 }
 
 export async function getPublicCategories() {

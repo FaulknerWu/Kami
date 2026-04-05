@@ -143,7 +143,7 @@ export function ArticlePageSkeleton() {
   );
 }
 
-export function AboutPageSkeleton() {
+export function MarkdownPageSkeleton() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 md:py-24">
       <SkeletonBlock className="mb-16 aspect-[21/9] w-full" />
