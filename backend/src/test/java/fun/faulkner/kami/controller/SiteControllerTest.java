@@ -45,9 +45,9 @@ class SiteControllerTest {
     void getSiteProfileShouldIncludePublicContacts() throws Exception {
         SiteProfileEntity siteProfile = new SiteProfileEntity();
         siteProfile.setId(1L);
-        siteProfile.setSiteName("Felix_SANA");
-        siteProfile.setHeroTitle("Felix_SANA 'S BLOG");
-        siteProfile.setAuthorName("Felix_SANA");
+        siteProfile.setSiteName("My Blog");
+        siteProfile.setHeroTitle("My Blog");
+        siteProfile.setAuthorName("Author");
 
         SiteContactEntity contact = new SiteContactEntity();
         contact.setId(10L);
@@ -64,7 +64,7 @@ class SiteControllerTest {
         mockMvc.perform(get("/api/site/profile").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.siteName").value("Felix_SANA"))
+                .andExpect(jsonPath("$.siteName").value("My Blog"))
                 .andExpect(jsonPath("$.contacts[0].label").value("hello@example.com"))
                 .andExpect(jsonPath("$.contacts[0].isPublic").value(true));
     }

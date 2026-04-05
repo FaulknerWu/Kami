@@ -27,8 +27,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
 @AutoConfigureMockMvc
+@SpringBootTest(properties = {
+        "kami.auth.admin-password={noop}test-admin-password",
+        "kami.auth.jwt-secret=0123456789abcdef0123456789abcdef",
+        "kami.auth.issuer=kami-test-suite",
+        "kami.auth.access-token-ttl=PT2H"
+})
 class AdminApiSecurityTest {
 
     @Autowired
@@ -83,13 +88,13 @@ class AdminApiSecurityTest {
 
     @Test
     void loginEndpointShouldBeAccessibleWithoutJwt() throws Exception {
-        when(adminAuthService.authenticate("change-me")).thenReturn("admin");
+        when(adminAuthService.authenticate("test-admin-password")).thenReturn("admin");
         when(jwtTokenService.generateAccessToken("admin")).thenReturn("test-token");
         when(jwtTokenService.getAccessTokenExpiresInSeconds()).thenReturn(7200L);
 
         mockMvc.perform(post("/api/admin/auth/login")
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(new LoginRequest("change-me"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("test-admin-password"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("test-token"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
