@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,9 +24,7 @@ export default function RootLayout({
         className="flex min-h-screen flex-col bg-white font-sans text-zinc-900 antialiased selection:bg-zinc-200 selection:text-zinc-900"
         suppressHydrationWarning
       >
-        <Header />
-        <div className="flex-1">{children}</div>
-        <Footer />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );
